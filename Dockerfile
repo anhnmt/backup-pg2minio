@@ -17,19 +17,20 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o go-cron ./cmd/go-
 # RUN go install github.com/anhnmt/backup-pg2minio/cmd/go-cron@latest
 RUN go install github.com/minio/mc@latest
 
-FROM alpine:3.18.4
+FROM alpine:3.18
 
 WORKDIR /app
 RUN apk add --update --no-cache postgresql-client curl && \
     rm -rf /var/cache/apk/*
 
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
-
-COPY --from=builder --chown=appuser:appgroup /app/go-cron /usr/local/bin/go-cron
-COPY --from=builder --chown=appuser:appgroup /go/bin/mc /usr/local/bin/mc
+COPY --from=builder /app/go-cron /usr/local/bin/go-cron
+COPY --from=builder /go/bin/mc /usr/local/bin/mc
+RUN chmod +x /usr/local/bin/mc && chmod +x /usr/local/bin/go-cron
 
 COPY run.sh backup.sh ./
 RUN chmod +x run.sh && chmod +x backup.sh
+
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
 CMD ["sh", "run.sh"]
