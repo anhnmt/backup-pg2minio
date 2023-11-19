@@ -1,0 +1,22 @@
+version: "3.4"
+services:
+  pg2minio:
+    container_name: pg2minio
+    image: ghcr.io/anhnmt/backup-pg2minio:latest
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    network_mode: host
+    environment:
+      SCHEDULE: "@daily"
+      MINIO_ACCESS_KEY: 12345678
+      MINIO_SECRET_KEY: 12345678
+      MINIO_BUCKET: minio
+      MINIO_SERVER: http://127.0.0.1:9000
+      MINIO_API_VERSION: S3v4
+      POSTGRES_DATABASE: exampledb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
+      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_PORT: 5432
+      POSTGRES_EXTRA_OPTS: '--inserts --clean --if-exists --no-owner --no-acl --blobs --schema=public --no-sync --rows-per-insert=500 --format=plain'
