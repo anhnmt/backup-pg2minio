@@ -8,7 +8,7 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/robfig/cron"
+	"github.com/robfig/cron/v3"
 )
 
 func execute(command string, args []string) {
