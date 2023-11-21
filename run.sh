@@ -1,9 +1,9 @@
-#!/bin/sh
+#!/bin/bash
 
 set -e
 
 if [[ -z "${SCHEDULE}" ]]; then
-  sh backup.sh
+  bash backup.sh
 else
-  exec go-cron "$SCHEDULE" /bin/sh backup.sh
+  exec go-cron "$SCHEDULE" /bin/bash backup.sh
 fi

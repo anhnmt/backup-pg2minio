@@ -20,7 +20,7 @@ RUN go install github.com/minio/mc@latest
 FROM alpine:3.18
 
 WORKDIR /app
-RUN apk add --update --no-cache postgresql-client curl && \
+RUN apk add --update --no-cache postgresql-client curl bash && \
     rm -rf /var/cache/apk/*
 
 COPY --from=builder /app/go-cron /usr/local/bin/go-cron
@@ -33,5 +33,5 @@ RUN chmod +x run.sh && chmod +x backup.sh
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
-CMD ["sh", "run.sh"]
+CMD ["bash", "run.sh"]
 # ENTRYPOINT ["tail", "-f", "/dev/null"]
