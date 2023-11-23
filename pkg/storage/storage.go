@@ -1,0 +1,4 @@
+package storage
+
+func sync() {
+}
