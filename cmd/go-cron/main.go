@@ -20,11 +20,10 @@ func execute(command string, args []string) {
 	cmd.Stderr = os.Stderr
 
 	cmd.Run()
-
 	cmd.Wait()
 }
 
-func create() (cr *cron.Cron, wgr *sync.WaitGroup) {
+func create() (*cron.Cron, *sync.WaitGroup) {
 	var schedule = os.Args[1]
 	var command = os.Args[2]
 	var args = os.Args[3:len(os.Args)]

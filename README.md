@@ -57,3 +57,4 @@ services:
 -  URL : https://github.com/wonderu/docker-backup-postgres-s3
 -  URL : https://github.com/schickling/dockerfiles/tree/master/postgres-backup-s3 
 -  More information about the scheduling can be found [here](http://godoc.org/github.com/robfig/cron#hdr-Predefined_schedules).
+- Cron parser: https://elmah.io/tools/cron-parser
