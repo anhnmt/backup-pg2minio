@@ -8,7 +8,7 @@ import (
 	"sync"
 	"syscall"
 
-	"github.com/robfig/cron"
+	"github.com/robfig/cron/v3"
 )
 
 func execute(command string, args []string) {
@@ -31,15 +31,23 @@ func create() (cr *cron.Cron, wgr *sync.WaitGroup) {
 	var args = os.Args[3:len(os.Args)]
 
 	wg := &sync.WaitGroup{}
-
-	c := cron.New()
 	println("new cron:", schedule)
 
-	c.AddFunc(schedule, func() {
+	var opts []cron.Option
+	if len(strings.Split(schedule, " ")) >= 6 {
+		opts = append(opts, cron.WithSeconds())
+	}
+
+	c := cron.New(opts...)
+
+	_, err := c.AddFunc(schedule, func() {
 		wg.Add(1)
 		execute(command, args)
 		wg.Done()
 	})
+	if err != nil {
+		panic(err)
+	}
 
 	return c, wg
 }
