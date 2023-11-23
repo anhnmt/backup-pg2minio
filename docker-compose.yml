@@ -1,4 +1,5 @@
 version: "3.4"
+
 services:
   pg2minio:
     container_name: pg2minio

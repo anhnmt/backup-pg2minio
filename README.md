@@ -16,6 +16,10 @@ MINIO_BUCKET=minio
 MINIO_SERVER=http://127.0.0.1:9000
 ```
 
+```bash
+docker build -f ./Dockerfile -t ghcr.io/anhnmt/backup-pg2minio:latest .
+```
+
 #### `docker-compose up -d`
 ```
 version: '3'
