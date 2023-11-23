@@ -14,6 +14,10 @@ import (
 	"github.com/anhnmt/backup-pg2minio/pkg/bootstrap"
 )
 
+func init() {
+	bootstrap.Bootstrap()
+}
+
 func execute(command string, args []string) error {
 	log.Info().Msgf("Executing: %s %s", command, strings.Join(args, " "))
 
@@ -70,7 +74,6 @@ func stop(c *cron.Cron, wg *sync.WaitGroup) {
 }
 
 func main() {
-	bootstrap.Bootstrap()
 	wg := &sync.WaitGroup{}
 
 	c := create(wg)

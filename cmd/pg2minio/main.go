@@ -8,9 +8,11 @@ import (
 	"github.com/anhnmt/backup-pg2minio/pkg/bootstrap"
 )
 
-func main() {
+func init() {
 	bootstrap.Bootstrap()
+}
 
+func main() {
 	schedule := viper.GetString("SCHEDULE")
 
 	if schedule == "" {
