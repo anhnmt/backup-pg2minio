@@ -68,7 +68,11 @@ FILE_NAME="${POSTGRES_DATABASE}_${TIMESTAMP}.sql.gz"
 
 function copy_to_minio {
   mc cp $1 $2 || exit 2
-  rm $HOME/tmp_dump.sql.gz
+
+  if [ -f "$HOME/tmp_dump.sql.gz" ]; then
+    rm $HOME/tmp_dump.sql.gz
+  fi
+
   sync
 }
 

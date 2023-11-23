@@ -13,8 +13,6 @@ COPY . .
 # Build the Go app
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o go-cron ./cmd/go-cron/main.go
 
-# Or use go install
-# RUN go install github.com/anhnmt/backup-pg2minio/cmd/go-cron@latest
 RUN go install github.com/minio/mc@latest
 
 FROM alpine:3.18
@@ -34,4 +32,4 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
 CMD ["bash", "run.sh"]
-# ENTRYPOINT ["tail", "-f", "/dev/null"]
+#ENTRYPOINT ["tail", "-f", "/dev/null"]
