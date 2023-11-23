@@ -48,24 +48,17 @@ func execute(command string, args []string) error {
 	log.Info().Msgf("Executing: %s %s", command, strings.Join(args, " "))
 
 	cmd := exec.Command(command, args...)
-
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err := cmd.Run()
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return cmd.Run()
 }
 
-func create() (cr *cron.Cron, wgr *sync.WaitGroup) {
+func create(wg *sync.WaitGroup) (cr *cron.Cron) {
 	var schedule = os.Args[1]
 	var command = os.Args[2]
 	var args = os.Args[3:len(os.Args)]
 
-	wg := &sync.WaitGroup{}
 	log.Info().Msgf("New cron: %s", schedule)
 
 	var opts []cron.Option
@@ -88,7 +81,7 @@ func create() (cr *cron.Cron, wgr *sync.WaitGroup) {
 		log.Panic().Err(err).Msg("Failed to add cron job")
 	}
 
-	return c, wg
+	return c
 }
 
 func start(c *cron.Cron) {
@@ -107,7 +100,9 @@ func stop(c *cron.Cron, wg *sync.WaitGroup) {
 }
 
 func main() {
-	c, wg := create()
+	wg := &sync.WaitGroup{}
+
+	c := create(wg)
 	go start(c)
 
 	ch := make(chan os.Signal, 1)
