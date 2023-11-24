@@ -57,7 +57,7 @@ func executePgDump(args ...string) error {
 	gzipCmd.Stdin = pipe
 
 	// Create a file to save the output of gzip
-	outputFile, err := CreateFile(PgDumpFile)
+	outputFile, err := createFile(PgDumpFile)
 	if err != nil {
 		return err
 	}

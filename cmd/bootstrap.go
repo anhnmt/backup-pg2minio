@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"fmt"
+	"context"
 	"os"
 	"runtime"
 	"strconv"
@@ -11,6 +11,7 @@ import (
 	"github.com/rs/zerolog"
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
+	"golang.org/x/sync/errgroup"
 )
 
 func bootstrap() {
@@ -82,39 +83,41 @@ func defaultConfig() {
 }
 
 func validate() error {
+	g, _ := errgroup.WithContext(context.Background())
+
 	// POSTGRESQL
-	if viper.GetString(PostgresHost) == "" {
-		return fmt.Errorf("You need to set the %s environment variable", PostgresHost)
-	}
+	g.Go(func() error {
+		return checkEnvString(PostgresHost)
+	})
 
-	if viper.GetString(PostgresUser) == "" {
-		return fmt.Errorf("You need to set the %s environment variable", PostgresUser)
-	}
+	g.Go(func() error {
+		return checkEnvString(PostgresUser)
+	})
 
-	if viper.GetString(PostgresPassword) == "" {
-		return fmt.Errorf("You need to set the %s environment variable", PostgresPassword)
-	}
+	g.Go(func() error {
+		return checkEnvString(PostgresPassword)
+	})
 
-	if viper.GetString(PostgresDatabase) == "" {
-		return fmt.Errorf("You need to set the %s environment variable", PostgresDatabase)
-	}
+	g.Go(func() error {
+		return checkEnvString(PostgresDatabase)
+	})
 
 	// MINIO
-	if viper.GetString(MinioAccessKey) == "" {
-		return fmt.Errorf("You need to set the %s environment variable", MinioAccessKey)
-	}
+	g.Go(func() error {
+		return checkEnvString(MinioAccessKey)
+	})
 
-	if viper.GetString(MinioSecretKey) == "" {
-		return fmt.Errorf("You need to set the %s environment variable", MinioSecretKey)
-	}
+	g.Go(func() error {
+		return checkEnvString(MinioSecretKey)
+	})
 
-	if viper.GetString(MinioServer) == "" {
-		return fmt.Errorf("You need to set the %s environment variable", MinioServer)
-	}
+	g.Go(func() error {
+		return checkEnvString(MinioServer)
+	})
 
-	if viper.GetString(MinioBucket) == "" {
-		return fmt.Errorf("You need to set the %s environment variable", MinioBucket)
-	}
+	g.Go(func() error {
+		return checkEnvString(MinioBucket)
+	})
 
-	return nil
+	return g.Wait()
 }
