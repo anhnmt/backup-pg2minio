@@ -1,4 +1,0 @@
-package utils
-
-func cleanup() {
-}

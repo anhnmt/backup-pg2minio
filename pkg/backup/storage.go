@@ -1,4 +1,0 @@
-package backup
-
-func SyncMinio() {
-}

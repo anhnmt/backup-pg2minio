@@ -11,25 +11,22 @@ RUN go mod download
 COPY . .
 
 # Build the Go app
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o go-cron ./cmd/go-cron/main.go
-
-RUN go install github.com/minio/mc@latest
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o pg2minio ./main.go
 
 FROM alpine:3.18
 
-WORKDIR /app
-RUN apk add --update --no-cache postgresql-client curl bash && \
+RUN apk add --update --no-cache postgresql-client && \
     rm -rf /var/cache/apk/*
 
-COPY --from=builder /app/go-cron /usr/local/bin/go-cron
-COPY --from=builder /go/bin/mc /usr/local/bin/mc
-RUN chmod +x /usr/local/bin/mc && chmod +x /usr/local/bin/go-cron
+WORKDIR /app
 
-COPY run.sh backup.sh ./
-RUN chmod +x run.sh && chmod +x backup.sh
+COPY --from=builder /app/pg2minio /usr/local/bin/pg2minio
+RUN chmod +x /usr/local/bin/pg2minio
+
+RUN chmod 0777 /app
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
-CMD ["bash", "run.sh"]
+CMD ["/usr/local/bin/pg2minio"]
 #ENTRYPOINT ["tail", "-f", "/dev/null"]

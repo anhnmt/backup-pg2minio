@@ -1,25 +1,21 @@
-package main
+package cmd
 
 import (
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
-
-	"github.com/anhnmt/backup-pg2minio/pkg/backup"
-	"github.com/anhnmt/backup-pg2minio/pkg/bootstrap"
 )
 
 func init() {
-	bootstrap.Bootstrap()
+	bootstrap()
 }
 
-func main() {
+func Execute() {
 	schedule := viper.GetString("SCHEDULE")
 
 	if schedule == "" {
 		log.Info().Msgf("Start backup")
 
-		err := backup.Start()
-		if err != nil {
+		if err := start(); err != nil {
 			log.Panic().Err(err).Msg("Failed to start backup")
 			return
 		}
@@ -28,5 +24,5 @@ func main() {
 		return
 	}
 
-	backup.Schedule(schedule)
+	scheduleBackup(schedule)
 }

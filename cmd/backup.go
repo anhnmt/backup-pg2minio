@@ -1,4 +1,4 @@
-package backup
+package cmd
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func Schedule(schedule string) {
+func scheduleBackup(schedule string) {
 	log.Info().Msgf("New cron: %s", schedule)
 
 	var opts []cron.Option
@@ -28,8 +28,7 @@ func Schedule(schedule string) {
 		wg.Add(1)
 		defer wg.Done()
 
-		err := Start()
-		if err != nil {
+		if err := start(); err != nil {
 			log.Err(err).Msg("Failed to start backup")
 		}
 	})
@@ -46,7 +45,11 @@ func Schedule(schedule string) {
 	return
 }
 
-func Start() error {
+func start() error {
+	err := pgDump()
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
