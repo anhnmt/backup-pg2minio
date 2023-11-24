@@ -10,7 +10,7 @@ func init() {
 }
 
 func Execute() {
-	schedule := viper.GetString("SCHEDULE")
+	schedule := viper.GetString(Schedule)
 
 	if schedule == "" {
 		log.Info().Msgf("Start backup")
