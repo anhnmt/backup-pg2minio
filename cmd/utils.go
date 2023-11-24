@@ -3,6 +3,7 @@ package cmd
 import (
 	"fmt"
 	"os"
+	"regexp"
 
 	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
@@ -24,4 +25,22 @@ func checkEnvString(key string) error {
 	}
 
 	return nil
+}
+
+func replaceSecret(str string) string {
+	regex, err := regexp.Compile(`postgresql:\/\/(.*?)\:(.*?)@`)
+	if err != nil {
+		return str
+	}
+
+	secret := "******"
+	matches := regex.FindStringSubmatch(str)
+	if len(matches) >= 3 {
+		// matches[1] = username,
+		// matches[2] = password
+		replaced := regex.ReplaceAllString(str, fmt.Sprintf("postgresql://$1:%s@", secret))
+		return replaced
+	}
+
+	return str
 }

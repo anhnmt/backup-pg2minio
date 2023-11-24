@@ -35,7 +35,7 @@ func pgDump() error {
 }
 
 func executePgDump(args ...string) error {
-	log.Info().Msgf("Executing: %s", PgDump)
+	log.Info().Msgf("Executing: %s %s", PgDump, replaceSecret(strings.Join(args, " ")))
 	pgDumpCmd := exec.Command(PgDump, args...)
 
 	// Create a pipe to connect the stdout of pg_dump to the stdin of gzip
