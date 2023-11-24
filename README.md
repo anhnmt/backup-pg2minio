@@ -16,10 +16,6 @@ MINIO_BUCKET=minio
 MINIO_SERVER=http://127.0.0.1:9000
 ```
 
-```bash
-docker build -f ./Dockerfile -t ghcr.io/anhnmt/backup-pg2minio:latest .
-```
-
 #### `docker-compose up -d`
 ```
 version: '3'
@@ -48,17 +44,20 @@ services:
 
 ### Optional Environment Variables
 
+- `SCHEDULE` - Cron schedule to run periodic backups.
+
 - `POSTGRES_PASSWORD` - Password for the PostgreSQL user, if you are using a database on the same machine this isn't usually needed.
 - `POSTGRES_PORT` - Port of the PostgreSQL database, uses the default 5432.
 - `POSTGRES_EXTRA_OPTS` - Extra arguments to pass to the `pg_dump` command.
+
 - `MINIO_API_VERSION` - you can change with S3v4 or S3v2.
 - `MINIO_CLEAN` - Assign a value to activate, default is 0. For example: 7d, 14d, 1m, 30s
-- `SCHEDULE` - Cron schedule to run periodic backups.
-- `CUSTOM_DIR` - Allows you to change the path in the bucket. e.g. abc/def (without / at the beginning and end)
+- `MINIO_BACKUP_DIR` - Allows you to change the path in the bucket. e.g. abc/def (without / at the beginning and end)
 
 # some script from 
 -  URL : https://github.com/michaloo/go-cron
 -  URL : https://github.com/wonderu/docker-backup-postgres-s3
 -  URL : https://github.com/schickling/dockerfiles/tree/master/postgres-backup-s3 
+-  URL : https://github.com/minio/mc
+-  Cron parser : [https://elmah.io/tools/cron-parser](https://elmah.io/tools/cron-parser/#0_*/5_*_*_*_*)
 -  More information about the scheduling can be found [here](http://godoc.org/github.com/robfig/cron#hdr-Predefined_schedules).
-- Cron parser: [https://elmah.io/tools/cron-parser](https://elmah.io/tools/cron-parser/#0_*/5_*_*_*_*)

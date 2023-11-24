@@ -1,2 +1,4 @@
 .idea
 .env
+docker-compose-*.yml
+*.gz
