@@ -19,6 +19,21 @@ func createFile(name string) (*os.File, error) {
 	return outputFile, nil
 }
 
+func removeFile(name string) error {
+	_, err := os.Stat(name)
+	if os.IsNotExist(err) {
+		return nil
+	}
+
+	err = os.Remove(name)
+	if err != nil {
+		log.Err(err).Msg("Error remove file")
+		return err
+	}
+
+	return nil
+}
+
 func checkEnvString(key string) error {
 	if viper.GetString(key) == "" {
 		return fmt.Errorf("You need to set the %s environment variable", key)

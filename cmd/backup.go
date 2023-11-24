@@ -46,6 +46,12 @@ func scheduleBackup(schedule string) {
 }
 
 func start() error {
+	defer func() {
+		if err := removeFile(PgDumpFile); err != nil {
+			log.Err(err).Msg("Failed to remove pg_dump file")
+		}
+	}()
+
 	err := pgDump()
 	if err != nil {
 		return err
