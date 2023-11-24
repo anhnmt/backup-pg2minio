@@ -24,4 +24,6 @@ const (
 	MinioServer     = "MINIO_SERVER"
 	MinioBucket     = "MINIO_BUCKET"
 	MinioApiVersion = "MINIO_API_VERSION"
+	MinioClean      = "MINIO_CLEAN"
+	MinioBackupDir  = "MINIO_BACKUP_DIR"
 )
