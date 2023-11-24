@@ -18,9 +18,28 @@ func storage() error {
 		return err
 	}
 
-	err = mcCopy()
+	bucket := fmt.Sprintf("minio/%s", viper.GetString(MinioBucket))
+	backupDir := fmt.Sprintf("%s/%s", bucket, viper.GetString(PostgresDatabase))
+
+	minioBackupDir := viper.GetString(MinioBackupDir)
+	if minioBackupDir != "" {
+		backupDir = fmt.Sprintf("%s/%s/%s", bucket, minioBackupDir, viper.GetString(PostgresDatabase))
+	}
+
+	err = mcCopy(backupDir)
 	if err != nil {
 		log.Err(err).Msg("Failed to copy")
+		return err
+	}
+
+	clean := viper.GetString(MinioClean)
+	if clean == "" {
+		return nil
+	}
+
+	err = mcClean(backupDir, clean)
+	if err != nil {
+		log.Err(err).Msg("Failed to clean")
 		return err
 	}
 
@@ -46,23 +65,34 @@ func aliasSet() error {
 	return mcCmd.Run()
 }
 
-func mcCopy() error {
+func mcCopy(backupDir string) error {
 	now := time.Now().Format(time.RFC3339)
 	fileName := fmt.Sprintf("%s_%s.sql.gz", viper.GetString(PostgresDatabase), now)
-	bucketPath := fmt.Sprintf("minio/%s", viper.GetString(MinioBucket))
 
 	args := []string{
 		"cp",
 		fmt.Sprintf("./%s", PgDumpFile),
 	}
 
-	backupDir := fmt.Sprintf("%s/%s", bucketPath, fileName)
+	args = append(args, fmt.Sprintf("%s/%s", backupDir, fileName))
 
-	minioBackupDir := viper.GetString(MinioBackupDir)
-	if minioBackupDir != "" {
-		backupDir = fmt.Sprintf("%s/%s/%s", bucketPath, minioBackupDir, fileName)
+	log.Info().Msgf("Executing: %s %s", MC, replaceMinioSecret(strings.Join(args, " ")))
+	mcCmd := exec.Command(MC, args...)
+	mcCmd.Stdout = os.Stdout
+	mcCmd.Stderr = os.Stderr
+
+	return mcCmd.Run()
+}
+
+func mcClean(backupDir, clean string) error {
+	args := []string{
+		"find",
+		backupDir,
+		"--older-than",
+		clean,
+		"--exec",
+		"mc rm {}",
 	}
-	args = append(args, backupDir)
 
 	log.Info().Msgf("Executing: %s %s", MC, replaceMinioSecret(strings.Join(args, " ")))
 	mcCmd := exec.Command(MC, args...)
