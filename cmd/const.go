@@ -7,6 +7,7 @@ const (
 )
 
 const (
+	Alias      = "minio"
 	PgDumpFile = "pg_dump.sql.gz"
 )
 

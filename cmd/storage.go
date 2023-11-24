@@ -18,7 +18,7 @@ func storage() error {
 		return err
 	}
 
-	bucket := fmt.Sprintf("minio/%s", viper.GetString(MinioBucket))
+	bucket := fmt.Sprintf("%s/%s", Alias, viper.GetString(MinioBucket))
 	backupDir := fmt.Sprintf("%s/%s", bucket, viper.GetString(PostgresDatabase))
 
 	minioBackupDir := viper.GetString(MinioBackupDir)
@@ -50,7 +50,7 @@ func aliasSet() error {
 	args := []string{
 		"alias",
 		"set",
-		"minio",
+		Alias,
 		viper.GetString(MinioServer),
 		viper.GetString(MinioAccessKey),
 		viper.GetString(MinioSecretKey),
