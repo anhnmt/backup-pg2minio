@@ -6,7 +6,7 @@ require (
 	github.com/robfig/cron/v3 v3.0.1
 	github.com/rs/zerolog v1.31.0
 	github.com/spf13/viper v1.17.0
-	golang.org/x/sync v0.3.0
+	golang.org/x/sync v0.5.0
 )
 
 require (

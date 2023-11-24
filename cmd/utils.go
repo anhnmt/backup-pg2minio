@@ -42,18 +42,35 @@ func checkEnvString(key string) error {
 	return nil
 }
 
-func replaceSecret(str string) string {
-	regex, err := regexp.Compile(`postgresql:\/\/(.*?)\:(.*?)@`)
+func replacePostgresql(str string) string {
+	regex, err := regexp.Compile(`-d (.*) `)
 	if err != nil {
 		return str
 	}
 
 	secret := "******"
 	matches := regex.FindStringSubmatch(str)
-	if len(matches) >= 3 {
-		// matches[1] = username,
-		// matches[2] = password
-		replaced := regex.ReplaceAllString(str, fmt.Sprintf("postgresql://$1:%s@", secret))
+	if len(matches) >= 2 {
+		replaced := regex.ReplaceAllString(str, fmt.Sprintf("-d %s ", secret))
+		return replaced
+	}
+
+	return str
+}
+
+func replaceMinioSecret(str string) string {
+	regex, err := regexp.Compile(`set minio (.*) (.*) (.*) --api`)
+	if err != nil {
+		return str
+	}
+
+	secret := "******"
+	matches := regex.FindStringSubmatch(str)
+	if len(matches) >= 4 {
+		// matches[1] = host
+		// matches[2] = access key
+		// matches[3] = secret key
+		replaced := regex.ReplaceAllString(str, fmt.Sprintf("set minio %s --api", secret))
 		return replaced
 	}
 

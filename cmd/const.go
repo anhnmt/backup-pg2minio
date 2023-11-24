@@ -3,6 +3,7 @@ package cmd
 const (
 	PgDump = "pg_dump"
 	Gzip   = "gzip"
+	MC     = "mc"
 )
 
 const (

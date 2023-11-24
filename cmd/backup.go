@@ -57,6 +57,11 @@ func start() error {
 		return err
 	}
 
+	err = storage()
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
