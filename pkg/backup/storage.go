@@ -1,0 +1,4 @@
+package backup
+
+func SyncMinio() {
+}

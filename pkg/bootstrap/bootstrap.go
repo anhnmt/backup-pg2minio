@@ -15,4 +15,10 @@ func Bootstrap() {
 		Str("goos", runtime.GOOS).
 		Str("version", runtime.Version()).
 		Msg("Bootstrap successfully")
+
+	err := validate()
+	if err != nil {
+		log.Panic().Err(err).Msg("Failed to validate config")
+		return
+	}
 }

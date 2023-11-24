@@ -1,4 +1,0 @@
-package storage
-
-func sync() {
-}

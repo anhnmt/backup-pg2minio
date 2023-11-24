@@ -1,11 +1,13 @@
 package backup
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"strings"
 	"sync"
 	"syscall"
+	"time"
 
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog/log"
@@ -26,10 +28,10 @@ func Schedule(schedule string) {
 		wg.Add(1)
 		defer wg.Done()
 
-		// err := utils.Execute(command, args)
-		// if err != nil {
-		// 	log.Err(err).Msg("Failed to execute command")
-		// }
+		err := Start()
+		if err != nil {
+			log.Err(err).Msg("Failed to start backup")
+		}
 	})
 	if err != nil {
 		log.Panic().Err(err).Msg("Failed to add cron job")
@@ -40,11 +42,29 @@ func Schedule(schedule string) {
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
 	<-ch
 
-	// stop(c, wg)
+	stop(c, wg)
 	return
 }
 
 func Start() error {
 
 	return nil
+}
+
+func stop(c *cron.Cron, wg *sync.WaitGroup) {
+	log.Info().Msg("Stopping")
+	ctx := c.Stop()
+	select {
+	case <-ctx.Done():
+		// expected
+	case <-time.After(time.Millisecond):
+		log.Panic().Err(fmt.Errorf("context not done even when cron Stop is completed")).Msg("Failed to stop cron")
+		return
+	}
+
+	log.Info().Msg("Waiting")
+	wg.Wait()
+
+	log.Info().Msg("Exiting")
+	os.Exit(0)
 }
