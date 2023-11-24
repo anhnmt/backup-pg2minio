@@ -28,6 +28,7 @@ func scheduleBackup(schedule string) {
 		wg.Add(1)
 		defer wg.Done()
 
+		log.Info().Msgf("Start backup at: %s", time.Now().Format(time.RFC3339))
 		if err := start(); err != nil {
 			log.Err(err).Msg("Failed to start backup")
 		}
@@ -36,6 +37,9 @@ func scheduleBackup(schedule string) {
 		log.Panic().Err(err).Msg("Failed to add cron job")
 		return
 	}
+
+	c.Start()
+	log.Info().Msg("Cron start")
 
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, syscall.SIGINT, syscall.SIGTERM)
