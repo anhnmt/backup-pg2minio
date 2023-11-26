@@ -10,9 +10,9 @@ func init() {
 }
 
 func Execute() {
-	schedule := viper.GetString(Schedule)
+	backupSchedule := viper.GetString(BackupSchedule)
 
-	if schedule == "" {
+	if backupSchedule == "" {
 		log.Info().Msgf("Start backup")
 
 		if err := start(); err != nil {
@@ -24,5 +24,5 @@ func Execute() {
 		return
 	}
 
-	scheduleBackup(schedule)
+	schedule(backupSchedule)
 }
