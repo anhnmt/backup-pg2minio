@@ -13,7 +13,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func scheduleBackup(schedule string) {
+func schedule(schedule string) {
 	log.Info().Msgf("New cron: %s", schedule)
 
 	var opts []cron.Option
@@ -76,7 +76,9 @@ func stop(c *cron.Cron, wg *sync.WaitGroup) {
 	case <-ctx.Done():
 		// expected
 	case <-time.After(time.Millisecond):
-		log.Panic().Err(fmt.Errorf("context not done even when cron Stop is completed")).Msg("Failed to stop cron")
+		log.Panic().
+			Err(fmt.Errorf("context not done even when cron Stop is completed")).
+			Msg("Failed to stop cron")
 		return
 	}
 

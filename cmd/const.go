@@ -7,9 +7,9 @@ const (
 )
 
 const (
-	Alias      = "minio"
-	PgDumpFile = "pg_dump.sql.gz"
-	Schedule   = "SCHEDULE"
+	Alias          = "minio"
+	PgDumpFile     = "pg_dump.sql.gz"
+	BackupSchedule = "SCHEDULE"
 )
 
 const (
