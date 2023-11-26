@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"os/exec"
 	"strings"
 
@@ -37,6 +38,7 @@ func pgDump() error {
 func executePgDump(args ...string) error {
 	log.Info().Msgf("Executing: %s %s", PgDump, replacePostgresql(strings.Join(args, " ")))
 	pgDumpCmd := exec.Command(PgDump, args...)
+	pgDumpCmd.Stderr = os.Stderr
 
 	// Create a pipe to connect the stdout of pg_dump to the stdin of gzip
 	pipe, err := pgDumpCmd.StdoutPipe()
@@ -55,6 +57,7 @@ func executePgDump(args ...string) error {
 	log.Info().Msgf("Executing: %s", Gzip)
 	gzipCmd := exec.Command(Gzip)
 	gzipCmd.Stdin = pipe
+	gzipCmd.Stderr = os.Stderr
 
 	// Create a file to save the output of gzip
 	outputFile, err := createFile(PgDumpFile)
