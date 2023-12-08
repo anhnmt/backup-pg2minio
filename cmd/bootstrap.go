@@ -80,13 +80,11 @@ func defaultConfig() {
 
 	// MINIO
 	viper.SetDefault(MinioApiVersion, "S3v4")
-
-	// TELEGRAM
-	viper.SetDefault(TelegramApiUrl, "https://api.telegram.org")
 }
 
 func validate() error {
 	g, _ := errgroup.WithContext(context.Background())
+	g.SetLimit(10)
 
 	// POSTGRESQL
 	g.Go(func() error {
@@ -121,6 +119,17 @@ func validate() error {
 	g.Go(func() error {
 		return checkEnvString(MinioBucket)
 	})
+
+	// TELEGRAM
+	if viper.GetBool(TelegramEnabled) {
+		g.Go(func() error {
+			return checkEnvString(TelegramChatId)
+		})
+
+		g.Go(func() error {
+			return checkEnvString(TelegramToken)
+		})
+	}
 
 	return g.Wait()
 }
