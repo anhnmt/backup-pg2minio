@@ -47,17 +47,22 @@ services:
 - `SCHEDULE` - Cron schedule to run periodic backups.
 
 - `POSTGRES_PASSWORD` - Password for the PostgreSQL user, if you are using a database on the same machine this isn't usually needed.
-- `POSTGRES_PORT` - Port of the PostgreSQL database, uses the default 5432.
+- `POSTGRES_PORT` - Port of the PostgreSQL database, uses the default `5432`.
 - `POSTGRES_EXTRA_OPTS` - Extra arguments to pass to the `pg_dump` command.
 
-- `MINIO_API_VERSION` - you can change with S3v4 or S3v2.
-- `MINIO_CLEAN` - Assign a value to activate, default is 0. For example: 7d, 14d, 1m, 30s
+- `MINIO_API_VERSION` - you can change with `S3v4` or `S3v2`.
+- `MINIO_CLEAN` - Assign a value to activate, default is `0`. For example: `7d`, `14d`, `1m`, `30s`
 - `MINIO_BACKUP_DIR` - Allows you to change the path in the bucket. e.g. abc/def (without / at the beginning and end)
 
+- `TELEGRAM_ENABLED` - Set `true` to enable (Used for scheduling only). Default is `false`
+- `TELEGRAM_API_URL` - Default is `https://api.telegram.org`
+- `TELEGRAM_CHAT_ID` - Chat ID for example `-40054422`
+- `TELEGRAM_TOKEN` - Telegram bot token for example `610864305:AAGw2BVSPYPjcc8940bswQTRUZIssSFJA`, without `bot` at the beginning
+
 # some script from 
--  URL : https://github.com/michaloo/go-cron
--  URL : https://github.com/wonderu/docker-backup-postgres-s3
--  URL : https://github.com/schickling/dockerfiles/tree/master/postgres-backup-s3 
--  URL : https://github.com/minio/mc
+-  go-cron : https://github.com/michaloo/go-cron
+-  docker-backup-postgres-s3 : https://github.com/wonderu/docker-backup-postgres-s3
+-  postgres-backup-s3 : https://github.com/schickling/dockerfiles/tree/master/postgres-backup-s3 
+-  MinIO Client : https://github.com/minio/mc
 -  Cron parser : [https://elmah.io/tools/cron-parser](https://elmah.io/tools/cron-parser/#0_*/5_*_*_*_*)
 -  More information about the scheduling can be found [here](http://godoc.org/github.com/robfig/cron#hdr-Predefined_schedules).

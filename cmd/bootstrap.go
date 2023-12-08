@@ -80,6 +80,9 @@ func defaultConfig() {
 
 	// MINIO
 	viper.SetDefault(MinioApiVersion, "S3v4")
+
+	// TELEGRAM
+	viper.SetDefault(TelegramApiUrl, "https://api.telegram.org")
 }
 
 func validate() error {

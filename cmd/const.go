@@ -30,3 +30,21 @@ const (
 	MinioClean      = "MINIO_CLEAN"
 	MinioBackupDir  = "MINIO_BACKUP_DIR"
 )
+
+const (
+	TelegramEnabled = "TELEGRAM_ENABLED"
+	TelegramApiUrl  = "TELEGRAM_API_URL"
+	TelegramChatId  = "TELEGRAM_CHAT_ID"
+	TelegramToken   = "TELEGRAM_TOKEN"
+)
+
+const (
+	SendMessage = "sendMessage"
+)
+
+type status int
+
+const (
+	StatusOK status = iota
+	StatusErr
+)
