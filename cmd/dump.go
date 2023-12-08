@@ -21,7 +21,8 @@ func pgDump() error {
 	)
 
 	args := []string{
-		"-d", postgresql,
+		"-d",
+		postgresql,
 	}
 
 	pgOpts := viper.GetString(PostgresExtraOpts)

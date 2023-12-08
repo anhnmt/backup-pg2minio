@@ -11,9 +11,20 @@ import (
 
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog/log"
+	"github.com/spf13/viper"
 )
 
 func schedule(schedule string) {
+	if viper.GetBool(TelegramEnabled) {
+		t, err := NewTelegram()
+		if err != nil {
+			log.Err(err).Msg("Failed to init telegram")
+			return
+		}
+
+		SetDefault(t)
+	}
+
 	log.Info().Msgf("New cron: %s", schedule)
 
 	var opts []cron.Option
@@ -30,14 +41,14 @@ func schedule(schedule string) {
 
 		now := time.Now().Format(time.RFC3339)
 		log.Info().Msgf("Start backup at: %s", now)
-		go OK().Msg("Start backup at: %s", now)
+		go OK("Start backup at: %s", now)
 
 		if err := start(); err != nil {
 			log.Err(err).Msg("Failed to start backup")
-			go Err(err).Msg("Failed to start backup")
+			go Err(err, "Failed to start backup")
 		}
 
-		go OK().Msg("Backup success")
+		go OK("Backup success")
 	})
 	if err != nil {
 		log.Panic().Err(err).Msg("Failed to add cron job")
@@ -59,7 +70,7 @@ func start() error {
 	defer func() {
 		if err := removeFile(PgDumpFile); err != nil {
 			log.Err(err).Msg("Failed to remove pg_dump file")
-			go Err(err).Msg("Failed to remove pg_dump file")
+			go Err(err, "Failed to remove pg_dump file")
 		}
 	}()
 
