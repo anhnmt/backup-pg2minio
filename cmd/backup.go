@@ -39,16 +39,14 @@ func schedule(schedule string) {
 		wg.Add(1)
 		defer wg.Done()
 
-		now := time.Now().Format(time.RFC3339)
-		log.Info().Msgf("Start backup at: %s", now)
-		go OK("Start backup at: %s", now)
+		now := time.Now()
+		log.Info().Msgf("Start backup at: %s", now.Format(time.RFC3339))
 
 		if err := start(); err != nil {
-			log.Err(err).Msg("Failed to start backup")
-			go Err(err, "Failed to start backup")
+			Err(err, "Failed to start backup")
 		}
 
-		go OK("Backup success")
+		OK("Backup successful: %s", time.Since(now).String())
 	})
 	if err != nil {
 		log.Panic().Err(err).Msg("Failed to add cron job")
@@ -69,8 +67,7 @@ func schedule(schedule string) {
 func start() error {
 	defer func() {
 		if err := removeFile(PgDumpFile); err != nil {
-			log.Err(err).Msg("Failed to remove pg_dump file")
-			go Err(err, "Failed to remove pg_dump file")
+			Err(err, "Failed to remove pg_dump file")
 		}
 	}()
 

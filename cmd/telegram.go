@@ -6,6 +6,7 @@ import (
 	"sync/atomic"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+	"github.com/rs/zerolog/log"
 	"github.com/spf13/viper"
 )
 
@@ -43,10 +44,12 @@ func NewTelegram() (*Telegram, error) {
 }
 
 func OK(text string, a ...any) error {
+	log.Info().Msgf(text, a...)
 	return Default().Msg(nil, text, a...)
 }
 
 func Err(err error, text string, a ...any) error {
+	log.Err(err).Msgf(text, a...)
 	return Default().Msg(err, text, a...)
 }
 
