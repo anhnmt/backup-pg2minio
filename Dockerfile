@@ -15,10 +15,11 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o pg2minio ./main.g
 
 RUN go install github.com/minio/mc@latest
 
-FROM alpine:3.18
+FROM alpine:3.19
 
-RUN apk add --update --no-cache postgresql-client && \
-    rm -rf /var/cache/apk/*
+RUN apk add --update --no-cache postgresql-client \
+    && rm -rf /var/lib/apt/lists/* \
+    && rm -rf /var/cache/apk/*
 
 WORKDIR /app
 
