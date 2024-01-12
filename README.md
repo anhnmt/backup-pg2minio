@@ -7,6 +7,7 @@ Backup Postgresql to Minio
 * 13
 * 14
 * 15
+* 16
 
 #### `cp .env.example .env`
 ```
