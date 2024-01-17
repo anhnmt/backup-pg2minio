@@ -9,22 +9,12 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/docker/go-units"
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 )
 
 func schedule(schedule string) {
-	if viper.GetBool(TelegramEnabled) {
-		t, err := NewTelegram()
-		if err != nil {
-			log.Err(err).Msg("Failed to init telegram")
-			return
-		}
-
-		SetDefault(t)
-	}
-
 	log.Info().Msgf("New cron: %s", schedule)
 
 	var opts []cron.Option
@@ -42,11 +32,9 @@ func schedule(schedule string) {
 		now := time.Now()
 		log.Info().Msgf("Start backup at: %s", now.Format(time.RFC3339))
 
-		if err := start(); err != nil {
+		if err := start(now); err != nil {
 			Err(err, "Failed to start backup")
 		}
-
-		OK("Backup successful: %s", time.Since(now).String())
 	})
 	if err != nil {
 		log.Panic().Err(err).Msg("Failed to add cron job")
@@ -64,14 +52,27 @@ func schedule(schedule string) {
 	return
 }
 
-func start() error {
-	defer func() {
-		if err := removeFile(PgDumpFile); err != nil {
+func start(now time.Time) (err error) {
+	defer func(_err *error) {
+		info, err2 := os.Stat(PgDumpFile)
+		if os.IsNotExist(err2) {
+			return
+		}
+
+		if err2 = removeFile(PgDumpFile); err2 != nil {
 			Err(err, "Failed to remove pg_dump file")
 		}
-	}()
 
-	err := pgDump()
+		if *_err == nil {
+			OK("Backup successful: %s, size: %s",
+				time.Since(now).String(),
+				units.BytesSize(float64(info.Size())),
+			)
+		}
+
+	}(&err)
+
+	err = pgDump()
 	if err != nil {
 		return err
 	}
@@ -90,7 +91,7 @@ func stop(c *cron.Cron, wg *sync.WaitGroup) {
 	select {
 	case <-ctx.Done():
 		// expected
-	case <-time.After(time.Millisecond):
+	case <-time.After(5 * time.Second):
 		log.Panic().
 			Err(fmt.Errorf("context not done even when cron Stop is completed")).
 			Msg("Failed to stop cron")

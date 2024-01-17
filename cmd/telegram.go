@@ -19,6 +19,10 @@ type Telegram struct {
 
 var defaultTelegram atomic.Value
 
+func init() {
+	SetDefault(&Telegram{})
+}
+
 func Default() *Telegram {
 	return defaultTelegram.Load().(*Telegram)
 }
@@ -54,6 +58,10 @@ func Err(err error, text string, a ...any) error {
 }
 
 func (t *Telegram) Msg(err error, text string, a ...any) error {
+	if t == nil {
+		return nil
+	}
+
 	if !t.enabled || t.chatId == 0 {
 		return nil
 	}
