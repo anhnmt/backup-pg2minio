@@ -55,7 +55,7 @@ services:
 - `MINIO_CLEAN` - Assign a value to activate, default is `0`. For example: `7d`, `14d`, `1m`, `30s`
 - `MINIO_BACKUP_DIR` - Allows you to change the path in the bucket. e.g. abc/def (without / at the beginning and end)
 
-- `TELEGRAM_ENABLED` - Set `true` to enable (Used for scheduling only). Default is `false`
+- `TELEGRAM_ENABLED` - Set `true` to enable. Default is `false`
 - `TELEGRAM_CHAT_ID` - Chat ID for example `-40054422`
 - `TELEGRAM_TOKEN` - Telegram bot token for example `610864305:AAGw2BVSPYPjcc8940bswQTRUZIssSFJA`, without `bot` at the beginning
 
