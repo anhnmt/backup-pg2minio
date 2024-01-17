@@ -12,20 +12,9 @@ import (
 	"github.com/docker/go-units"
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 )
 
 func schedule(schedule string) {
-	if viper.GetBool(TelegramEnabled) {
-		t, err := NewTelegram()
-		if err != nil {
-			log.Err(err).Msg("Failed to init telegram")
-			return
-		}
-
-		SetDefault(t)
-	}
-
 	log.Info().Msgf("New cron: %s", schedule)
 
 	var opts []cron.Option
