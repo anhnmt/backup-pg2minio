@@ -20,12 +20,7 @@ func createFile(name string) (*os.File, error) {
 }
 
 func removeFile(name string) error {
-	_, err := os.Stat(name)
-	if os.IsNotExist(err) {
-		return nil
-	}
-
-	err = os.Remove(name)
+	err := os.Remove(name)
 	if err != nil {
 		log.Err(err).Msg("Error remove file")
 		return err
