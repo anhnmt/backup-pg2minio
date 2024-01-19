@@ -7,17 +7,16 @@ import (
 	"strings"
 
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 )
 
-func pgDump() error {
+func pgDump(cfg Postgres) error {
 	postgresql := fmt.Sprintf(
-		"postgresql://%s:%s@%s:%s/%s",
-		viper.GetString(PostgresUser),
-		viper.GetString(PostgresPassword),
-		viper.GetString(PostgresHost),
-		viper.GetString(PostgresPort),
-		viper.GetString(PostgresDatabase),
+		"postgresql://%s:%s@%s:%d/%s",
+		cfg.User,
+		cfg.Password,
+		cfg.Host,
+		cfg.Port,
+		cfg.Database,
 	)
 
 	args := []string{
@@ -25,7 +24,7 @@ func pgDump() error {
 		postgresql,
 	}
 
-	pgOpts := viper.GetString(PostgresExtraOpts)
+	pgOpts := cfg.ExtraOpts
 	if pgOpts != "" {
 		pgOpts = strings.TrimSpace(pgOpts)
 		pgOpts = strings.ReplaceAll(pgOpts, "=", " ")

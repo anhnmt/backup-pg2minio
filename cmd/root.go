@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 )
 
 func init() {
@@ -12,8 +11,14 @@ func init() {
 }
 
 func Execute() {
-	if viper.GetBool(TelegramEnabled) {
-		t, err := NewTelegram()
+	cfg, err := New()
+	if err != nil {
+		log.Panic().Err(err).Msg("Failed to init config")
+		return
+	}
+
+	if cfg.Telegram.Enable {
+		t, err := NewTelegram(cfg.Telegram, cfg.Postgres.Database)
 		if err != nil {
 			log.Panic().Err(err).Msg("Failed to init telegram")
 			return
@@ -22,12 +27,10 @@ func Execute() {
 		SetDefault(t)
 	}
 
-	backupSchedule := viper.GetString(BackupSchedule)
-
-	if backupSchedule == "" {
+	if cfg.Schedule.Cron == "" {
 		log.Info().Msgf("Start backup")
 
-		if err := start(time.Now()); err != nil {
+		if err = start(cfg, time.Now()); err != nil {
 			log.Panic().Err(err).Msg("Failed to start backup")
 			return
 		}
@@ -36,5 +39,5 @@ func Execute() {
 		return
 	}
 
-	schedule(backupSchedule)
+	Cron(cfg)
 }

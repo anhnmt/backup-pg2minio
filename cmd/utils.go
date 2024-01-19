@@ -6,7 +6,6 @@ import (
 	"regexp"
 
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 )
 
 func createFile(name string) (*os.File, error) {
@@ -24,14 +23,6 @@ func removeFile(name string) error {
 	if err != nil {
 		log.Err(err).Msg("Error remove file")
 		return err
-	}
-
-	return nil
-}
-
-func checkEnvString(key string) error {
-	if viper.GetString(key) == "" {
-		return fmt.Errorf("You need to set the %s environment variable", key)
 	}
 
 	return nil

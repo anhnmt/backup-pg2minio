@@ -8,36 +8,34 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 )
 
-func storage() error {
-	err := aliasSet()
+func storage(cfg Minio, dbName string) error {
+	err := aliasSet(cfg)
 	if err != nil {
 		log.Err(err).Msg("Failed to set alias")
 		return err
 	}
 
-	bucket := fmt.Sprintf("%s/%s", Alias, viper.GetString(MinioBucket))
-	backupDir := fmt.Sprintf("%s/%s", bucket, viper.GetString(PostgresDatabase))
+	bucket := fmt.Sprintf("%s/%s", Alias, cfg.Bucket)
+	backupDir := fmt.Sprintf("%s/%s", bucket, dbName)
 
-	minioBackupDir := viper.GetString(MinioBackupDir)
+	minioBackupDir := cfg.BackupDir
 	if minioBackupDir != "" {
-		backupDir = fmt.Sprintf("%s/%s/%s", bucket, minioBackupDir, viper.GetString(PostgresDatabase))
+		backupDir = fmt.Sprintf("%s/%s/%s", bucket, minioBackupDir, dbName)
 	}
 
-	err = mcCopy(backupDir)
+	err = mcCopy(backupDir, dbName)
 	if err != nil {
 		log.Err(err).Msg("Failed to copy")
 		return err
 	}
 
-	clean := viper.GetString(MinioClean)
-	if clean == "" {
+	if cfg.Clean == "" {
 		return nil
 	}
 
-	err = mcClean(backupDir, clean)
+	err = mcClean(backupDir, cfg.Clean)
 	if err != nil {
 		log.Err(err).Msg("Failed to clean")
 		return err
@@ -46,15 +44,15 @@ func storage() error {
 	return nil
 }
 
-func aliasSet() error {
+func aliasSet(cfg Minio) error {
 	args := []string{
 		"alias",
 		"set",
 		Alias,
-		viper.GetString(MinioServer),
-		viper.GetString(MinioAccessKey),
-		viper.GetString(MinioSecretKey),
-		"--api", viper.GetString(MinioApiVersion),
+		cfg.Server,
+		cfg.AccessKey,
+		cfg.SecretKey,
+		"--api", cfg.ApiVersion,
 	}
 
 	log.Info().Msgf("Executing: %s %s", MC, replaceMinioSecret(strings.Join(args, " ")))
@@ -65,9 +63,9 @@ func aliasSet() error {
 	return mcCmd.Run()
 }
 
-func mcCopy(backupDir string) error {
+func mcCopy(backupDir string, dbName string) error {
 	now := time.Now().Format(time.RFC3339)
-	fileName := fmt.Sprintf("%s_%s.sql.gz", viper.GetString(PostgresDatabase), now)
+	fileName := fmt.Sprintf("%s_%s.sql.gz", dbName, now)
 
 	args := []string{
 		"cp",

@@ -14,7 +14,9 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func schedule(schedule string) {
+func Cron(cfg Config) {
+	schedule := cfg.Schedule.Cron
+
 	log.Info().Msgf("New cron: %s", schedule)
 
 	var opts []cron.Option
@@ -32,7 +34,7 @@ func schedule(schedule string) {
 		now := time.Now()
 		log.Info().Msgf("Start backup at: %s", now.Format(time.RFC3339))
 
-		if err := start(now); err != nil {
+		if err := start(cfg, now); err != nil {
 			Err(err, "Failed to start backup")
 		}
 	})
@@ -52,7 +54,7 @@ func schedule(schedule string) {
 	return
 }
 
-func start(now time.Time) (err error) {
+func start(cfg Config, now time.Time) (err error) {
 	defer func(_err *error) {
 		info, err2 := os.Stat(PgDumpFile)
 		if os.IsNotExist(err2) {
@@ -72,12 +74,12 @@ func start(now time.Time) (err error) {
 
 	}(&err)
 
-	err = pgDump()
+	err = pgDump(cfg.Postgres)
 	if err != nil {
 		return err
 	}
 
-	err = storage()
+	err = storage(cfg.Minio, cfg.Postgres.Database)
 	if err != nil {
 		return err
 	}
