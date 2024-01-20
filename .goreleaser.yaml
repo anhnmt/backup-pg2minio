@@ -25,6 +25,7 @@ builds:
       - amd64
 
 checksum:
+  algorithm: sha256
   name_template: "checksums.txt"
 
 dockers:
