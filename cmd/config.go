@@ -23,7 +23,7 @@ type Postgres struct {
 	Host      string `yaml:"host" env:"POSTGRES_HOST" env-default:"localhost"`
 	Port      int    `yaml:"port" env:"POSTGRES_PORT" env-default:"5432"`
 	User      string `yaml:"user" env:"POSTGRES_USER" env-default:"postgres"`
-	Password  string `env-required:"true" yaml:"user" env:"POSTGRES_PASSWORD"`
+	Password  string `yaml:"user" env:"POSTGRES_PASSWORD"`
 	Database  string `env-required:"true" yaml:"database" env:"POSTGRES_DATABASE"`
 	ExtraOpts string `yaml:"extraOpts" env:"POSTGRES_EXTRA_OPTS"`
 }
