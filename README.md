@@ -23,7 +23,7 @@ version: '3'
 services:
   pg2minio:
     container_name: pg2minio
-    image: ghcr.io/anhnmt/backup-pg2minio:latest
+    image: anhnmt/backup-pg2minio:latest
     build:
       context: .
       dockerfile: ./Dockerfile
@@ -37,11 +37,9 @@ services:
 - `MINIO_ACCESS_KEY` - Your Minio access key.
 - `MINIO_SECRET_KEY` - Your Minio access key.
 - `MINIO_BUCKET` - Your Minio bucket.
-- `MINIO_HOST` - Your Minio Host
+- `MINIO_SERVER` - Your Minio server
 
 - `POSTGRES_HOST` - Hostname of the PostgreSQL database to backup, alternatively this container can be linked to the container with the name `postgres`.
-- `POSTGRES_DATABASE` - Name of the PostgreSQL database to backup.
-- `POSTGRES_USER` - PostgreSQL user, with priviledges to dump the database.
 
 ### Optional Environment Variables
 
@@ -50,10 +48,16 @@ services:
 - `POSTGRES_PASSWORD` - Password for the PostgreSQL user, if you are using a database on the same machine this isn't usually needed.
 - `POSTGRES_PORT` - Port of the PostgreSQL database, uses the default `5432`.
 - `POSTGRES_EXTRA_OPTS` - Extra arguments to pass to the `pg_dump` command.
+- `POSTGRES_DATABASE` - Name of the PostgreSQL database to backup.
+- `POSTGRES_USER` - PostgreSQL user, with priviledges to dump the database.
+- `POSTGRES_PRERUN` - Check connection before executing.
 
 - `MINIO_API_VERSION` - you can change with `S3v4` or `S3v2`.
 - `MINIO_CLEAN` - Assign a value to activate, default is `0`. For example: `7d`, `14d`, `1m`, `30s`
 - `MINIO_BACKUP_DIR` - Allows you to change the path in the bucket. e.g. abc/def (without / at the beginning and end)
+- `MINIO_INSECURE` - Disables TLS/SSL certificate verification.
+- `MINIO_DEBUG` - Enables verbose output to the console.
+- `MINIO_PRERUN` - Check connection before executing.
 
 - `TELEGRAM_ENABLED` - Set `true` to enable. Default is `false`
 - `TELEGRAM_CHAT_ID` - Chat ID for example `-40054422`
