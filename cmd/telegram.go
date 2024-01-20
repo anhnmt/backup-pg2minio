@@ -33,11 +33,11 @@ func SetDefault(t *tele) {
 func NewTelegram(cfg Telegram, dbName string) (*tele, error) {
 	if cfg.Enable == true {
 		if cfg.Token == "" {
-			return nil, fmt.Errorf("You need to set the %s environment variable", "TELEGRAM_TOKEN")
+			return nil, errEnv("TELEGRAM_TOKEN")
 		}
 
 		if cfg.ChatId == 0 {
-			return nil, fmt.Errorf("You need to set the %s environment variable", "TELEGRAM_CHAT_ID")
+			return nil, errEnv("TELEGRAM_CHAT_ID")
 		}
 	}
 
@@ -54,6 +54,10 @@ func NewTelegram(cfg Telegram, dbName string) (*tele, error) {
 	}
 
 	return t, nil
+}
+
+func errEnv(env string) error {
+	return fmt.Errorf("You need to set the %s environment variable", env)
 }
 
 func OK(text string, a ...any) error {
