@@ -29,7 +29,7 @@ func removeFile(name string) error {
 }
 
 func replacePostgresql(str string) string {
-	regex, err := regexp.Compile(`-d (.*) `)
+	regex, err := regexp.Compile(` postgresql://(.*) `)
 	if err != nil {
 		return str
 	}
@@ -37,7 +37,7 @@ func replacePostgresql(str string) string {
 	secret := "******"
 	matches := regex.FindStringSubmatch(str)
 	if len(matches) >= 2 {
-		replaced := regex.ReplaceAllString(str, fmt.Sprintf("-d %s ", secret))
+		replaced := regex.ReplaceAllString(str, fmt.Sprintf(" postgresql://%s ", secret))
 		return replaced
 	}
 

@@ -9,41 +9,43 @@ import (
 )
 
 type Config struct {
-	Schedule `yaml:"schedule" json:"schedule"`
-	Postgres `yaml:"postgres" json:"postgres"`
-	Minio    `yaml:"minio" json:"minio"`
-	Telegram `yaml:"telegram" json:"telegram"`
+	Schedule `json:"schedule"`
+	Postgres `json:"postgres"`
+	Minio    `json:"minio"`
+	Telegram `json:"telegram"`
 }
 
 type Schedule struct {
-	Cron string `yaml:"cron" env:"SCHEDULE"`
+	Cron string `env:"SCHEDULE"`
 }
 
 type Postgres struct {
-	Host      string `yaml:"host" env:"POSTGRES_HOST" env-default:"localhost"`
-	Port      int    `yaml:"port" env:"POSTGRES_PORT" env-default:"5432"`
-	User      string `yaml:"user" env:"POSTGRES_USER" env-default:"postgres"`
-	Password  string `yaml:"user" env:"POSTGRES_PASSWORD"`
-	Database  string `env-required:"true" yaml:"database" env:"POSTGRES_DATABASE"`
-	ExtraOpts string `yaml:"extraOpts" env:"POSTGRES_EXTRA_OPTS"`
+	Prerun    bool   `env:"POSTGRES_PRERUN" env-default:"true"`
+	Host      string `env:"POSTGRES_HOST" env-default:"localhost"`
+	Port      int    `env:"POSTGRES_PORT" env-default:"5432"`
+	User      string `env:"POSTGRES_USER" env-default:"postgres"`
+	Password  string `env:"POSTGRES_PASSWORD"`
+	Database  string `env:"POSTGRES_DATABASE"`
+	ExtraOpts string `env:"POSTGRES_EXTRA_OPTS"`
 }
 
 type Minio struct {
-	AccessKey  string `env-required:"true" yaml:"accessKey" env:"MINIO_ACCESS_KEY"`
-	SecretKey  string `env-required:"true" yaml:"secretKey" env:"MINIO_SECRET_KEY"`
-	Server     string `env-required:"true" yaml:"server" env:"MINIO_SERVER"`
-	Bucket     string `env-required:"true" yaml:"bucket" env:"MINIO_BUCKET"`
-	ApiVersion string `yaml:"apiVersion" env:"MINIO_API_VERSION" env-default:"S3v4"`
-	Clean      string `yaml:"clean" env:"MINIO_CLEAN"`
-	BackupDir  string `yaml:"backupDir" env:"MINIO_BACKUP_DIR"`
-	Insecure   bool   `yaml:"insecure" env:"MINIO_INSECURE"`
-	Debug      bool   `yaml:"debug" env:"MINIO_DEBUG"`
+	Prerun     bool   `env:"MINIO_PRERUN" env-default:"true"`
+	AccessKey  string `env:"MINIO_ACCESS_KEY" env-required:"true"`
+	SecretKey  string `env:"MINIO_SECRET_KEY" env-required:"true"`
+	Server     string `env:"MINIO_SERVER" env-required:"true"`
+	Bucket     string `env:"MINIO_BUCKET" env-required:"true"`
+	ApiVersion string `env:"MINIO_API_VERSION" env-default:"S3v4"`
+	Clean      string `env:"MINIO_CLEAN"`
+	BackupDir  string `env:"MINIO_BACKUP_DIR"`
+	Insecure   bool   `env:"MINIO_INSECURE"`
+	Debug      bool   `env:"MINIO_DEBUG"`
 }
 
 type Telegram struct {
-	Enable bool   `yaml:"enable" env:"TELEGRAM_ENABLED"`
-	ChatId int64  `yaml:"chatId" env:"TELEGRAM_CHAT_ID"`
-	Token  string `yaml:"token" env:"TELEGRAM_TOKEN"`
+	Enable bool   `env:"TELEGRAM_ENABLED"`
+	ChatId int64  `env:"TELEGRAM_CHAT_ID"`
+	Token  string `env:"TELEGRAM_TOKEN"`
 }
 
 func New() (Config, error) {

@@ -11,12 +11,6 @@ import (
 )
 
 func storage(cfg Minio, dbName string) error {
-	err := aliasSet(cfg)
-	if err != nil {
-		log.Err(err).Msg("Failed to set alias")
-		return err
-	}
-
 	bucket := fmt.Sprintf("%s/%s", Alias, cfg.Bucket)
 	backupDir := fmt.Sprintf("%s/%s", bucket, dbName)
 
@@ -24,7 +18,7 @@ func storage(cfg Minio, dbName string) error {
 		backupDir = fmt.Sprintf("%s/%s/%s", bucket, cfg.BackupDir, dbName)
 	}
 
-	err = mcCopy(cfg, backupDir, dbName)
+	err := mcCopy(cfg, backupDir, dbName)
 	if err != nil {
 		log.Err(err).Msg("Failed to copy")
 		return err
@@ -61,6 +55,30 @@ func aliasSet(cfg Minio) error {
 	}
 
 	log.Info().Msgf("Executing: %s %s", MC, replaceMinioSecret(strings.Join(args, " ")))
+	mcCmd := exec.Command(MC, args...)
+	mcCmd.Stdout = os.Stdout
+	mcCmd.Stderr = os.Stderr
+
+	return mcCmd.Run()
+}
+
+func preRunMinio(cfg Minio) error {
+	args := []string{
+		"version",
+		"info",
+		fmt.Sprintf("%s/%s", Alias, cfg.Bucket),
+		"-q",
+	}
+
+	if cfg.Insecure {
+		args = append(args, "--insecure")
+	}
+
+	if cfg.Debug {
+		args = append(args, "--debug")
+	}
+
+	log.Info().Msgf("Executing: %s %s", MC, strings.Join(args, " "))
 	mcCmd := exec.Command(MC, args...)
 	mcCmd.Stdout = os.Stdout
 	mcCmd.Stderr = os.Stderr
