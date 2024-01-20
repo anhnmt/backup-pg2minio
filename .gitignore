@@ -2,3 +2,4 @@
 .env
 docker-compose-*.yml
 *.gz
+dist/
