@@ -8,53 +8,50 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 )
 
-func storage() error {
-	err := aliasSet()
-	if err != nil {
-		log.Err(err).Msg("Failed to set alias")
-		return err
+func storage(cfg Minio, dbName string) error {
+	bucket := fmt.Sprintf("%s/%s", Alias, cfg.Bucket)
+	backupDir := fmt.Sprintf("%s/%s", bucket, dbName)
+
+	if cfg.BackupDir != "" {
+		backupDir = fmt.Sprintf("%s/%s/%s", bucket, cfg.BackupDir, dbName)
 	}
 
-	bucket := fmt.Sprintf("%s/%s", Alias, viper.GetString(MinioBucket))
-	backupDir := fmt.Sprintf("%s/%s", bucket, viper.GetString(PostgresDatabase))
-
-	minioBackupDir := viper.GetString(MinioBackupDir)
-	if minioBackupDir != "" {
-		backupDir = fmt.Sprintf("%s/%s/%s", bucket, minioBackupDir, viper.GetString(PostgresDatabase))
-	}
-
-	err = mcCopy(backupDir)
+	err := mcCopy(cfg, backupDir, dbName)
 	if err != nil {
 		log.Err(err).Msg("Failed to copy")
 		return err
 	}
 
-	clean := viper.GetString(MinioClean)
-	if clean == "" {
-		return nil
-	}
-
-	err = mcClean(backupDir, clean)
-	if err != nil {
-		log.Err(err).Msg("Failed to clean")
-		return err
+	if cfg.Clean != "" {
+		err = mcClean(cfg, backupDir, cfg.Clean)
+		if err != nil {
+			log.Err(err).Msg("Failed to clean")
+			return err
+		}
 	}
 
 	return nil
 }
 
-func aliasSet() error {
+func aliasSet(cfg Minio) error {
 	args := []string{
 		"alias",
 		"set",
 		Alias,
-		viper.GetString(MinioServer),
-		viper.GetString(MinioAccessKey),
-		viper.GetString(MinioSecretKey),
-		"--api", viper.GetString(MinioApiVersion),
+		cfg.Server,
+		cfg.AccessKey,
+		cfg.SecretKey,
+		"--api", cfg.ApiVersion,
+	}
+
+	if cfg.Insecure {
+		args = append(args, "--insecure")
+	}
+
+	if cfg.Debug {
+		args = append(args, "--debug")
 	}
 
 	log.Info().Msgf("Executing: %s %s", MC, replaceMinioSecret(strings.Join(args, " ")))
@@ -65,13 +62,45 @@ func aliasSet() error {
 	return mcCmd.Run()
 }
 
-func mcCopy(backupDir string) error {
+func preRunMinio(cfg Minio) error {
+	args := []string{
+		"version",
+		"info",
+		fmt.Sprintf("%s/%s", Alias, cfg.Bucket),
+		"-q",
+	}
+
+	if cfg.Insecure {
+		args = append(args, "--insecure")
+	}
+
+	if cfg.Debug {
+		args = append(args, "--debug")
+	}
+
+	log.Info().Msgf("Executing: %s %s", MC, strings.Join(args, " "))
+	mcCmd := exec.Command(MC, args...)
+	mcCmd.Stdout = os.Stdout
+	mcCmd.Stderr = os.Stderr
+
+	return mcCmd.Run()
+}
+
+func mcCopy(cfg Minio, backupDir string, dbName string) error {
 	now := time.Now().Format(time.RFC3339)
-	fileName := fmt.Sprintf("%s_%s.sql.gz", viper.GetString(PostgresDatabase), now)
+	fileName := fmt.Sprintf("%s_%s.sql.gz", dbName, now)
 
 	args := []string{
 		"cp",
 		fmt.Sprintf("./%s", PgDumpFile),
+	}
+
+	if cfg.Insecure {
+		args = append(args, "--insecure")
+	}
+
+	if cfg.Debug {
+		args = append(args, "--debug")
 	}
 
 	args = append(args, fmt.Sprintf("%s/%s", backupDir, fileName))
@@ -84,7 +113,7 @@ func mcCopy(backupDir string) error {
 	return mcCmd.Run()
 }
 
-func mcClean(backupDir, clean string) error {
+func mcClean(cfg Minio, backupDir, clean string) error {
 	args := []string{
 		"find",
 		backupDir,
@@ -92,6 +121,14 @@ func mcClean(backupDir, clean string) error {
 		clean,
 		"--exec",
 		"mc rm {}",
+	}
+
+	if cfg.Insecure {
+		args = append(args, "--insecure")
+	}
+
+	if cfg.Debug {
+		args = append(args, "--debug")
 	}
 
 	log.Info().Msgf("Executing: %s %s", MC, replaceMinioSecret(strings.Join(args, " ")))

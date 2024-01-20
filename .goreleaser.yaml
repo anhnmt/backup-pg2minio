@@ -1,0 +1,52 @@
+# This is an example .goreleaser.yml file with some sensible defaults.
+# Make sure to check the documentation at https://goreleaser.com
+
+# The lines below are called `modelines`. See `:help modeline`
+# Feel free to remove those if you don't want/need to use them.
+# yaml-language-server: $schema=https://goreleaser.com/static/schema.json
+# vim: set ts=2 sw=2 tw=0 fo=cnqoj
+
+version: 1
+
+env:
+  - GO111MODULE=on
+
+before:
+  hooks:
+    # You may remove this if you don't use go modules.
+    - go mod tidy
+
+builds:
+  - env:
+      - CGO_ENABLED=0
+    goos:
+      - linux
+    goarch:
+      - amd64
+
+checksum:
+  algorithm: sha256
+  name_template: "checksums.txt"
+
+dockers:
+  - image_templates:
+    - "anhnmt/backup-pg2minio:latest"
+    - "anhnmt/backup-pg2minio:{{ .Tag }}"
+    dockerfile: ./Dockerfile
+    goos: linux
+    goarch: amd64
+    extra_files:
+      - ./
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+      - "^chore"
+      - "merge conflict"
+      - Merge pull request
+      - Merge remote-tracking branch
+      - Merge branch
+      - go mod tidy

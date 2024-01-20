@@ -6,7 +6,6 @@ import (
 	"regexp"
 
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 )
 
 func createFile(name string) (*os.File, error) {
@@ -29,16 +28,8 @@ func removeFile(name string) error {
 	return nil
 }
 
-func checkEnvString(key string) error {
-	if viper.GetString(key) == "" {
-		return fmt.Errorf("You need to set the %s environment variable", key)
-	}
-
-	return nil
-}
-
 func replacePostgresql(str string) string {
-	regex, err := regexp.Compile(`-d (.*) `)
+	regex, err := regexp.Compile(` postgresql://(.*) `)
 	if err != nil {
 		return str
 	}
@@ -46,7 +37,7 @@ func replacePostgresql(str string) string {
 	secret := "******"
 	matches := regex.FindStringSubmatch(str)
 	if len(matches) >= 2 {
-		replaced := regex.ReplaceAllString(str, fmt.Sprintf("-d %s ", secret))
+		replaced := regex.ReplaceAllString(str, fmt.Sprintf(" postgresql://%s ", secret))
 		return replaced
 	}
 

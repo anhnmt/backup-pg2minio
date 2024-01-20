@@ -7,25 +7,24 @@ import (
 	"strings"
 
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 )
 
-func pgDump() error {
-	postgresql := fmt.Sprintf(
-		"postgresql://%s:%s@%s:%s/%s",
-		viper.GetString(PostgresUser),
-		viper.GetString(PostgresPassword),
-		viper.GetString(PostgresHost),
-		viper.GetString(PostgresPort),
-		viper.GetString(PostgresDatabase),
+func pgDump(cfg Postgres) error {
+	conn := fmt.Sprintf(
+		"postgresql://%s:%s@%s:%d/%s",
+		cfg.User,
+		cfg.Password,
+		cfg.Host,
+		cfg.Port,
+		cfg.Database,
 	)
 
 	args := []string{
 		"-d",
-		postgresql,
+		conn,
 	}
 
-	pgOpts := viper.GetString(PostgresExtraOpts)
+	pgOpts := cfg.ExtraOpts
 	if pgOpts != "" {
 		pgOpts = strings.TrimSpace(pgOpts)
 		pgOpts = strings.ReplaceAll(pgOpts, "=", " ")
@@ -34,6 +33,28 @@ func pgDump() error {
 	}
 
 	return executePgDump(args...)
+}
+
+func preRunPostgres(cfg Postgres) error {
+	conn := fmt.Sprintf(
+		"postgresql://%s:%s@%s:%d/%s",
+		cfg.User,
+		cfg.Password,
+		cfg.Host,
+		cfg.Port,
+		cfg.Database,
+	)
+
+	args := []string{
+		conn,
+		"-c", "SELECT 1",
+	}
+
+	log.Info().Msgf("Executing: %s %s", PSQL, replacePostgresql(strings.Join(args, " ")))
+	psqlCmd := exec.Command(PSQL, args...)
+	psqlCmd.Stderr = os.Stderr
+
+	return psqlCmd.Run()
 }
 
 func executePgDump(args ...string) error {
@@ -50,7 +71,7 @@ func executePgDump(args ...string) error {
 
 	// Start pg_dump command
 	if err = pgDumpCmd.Start(); err != nil {
-		log.Err(err).Msg("Error start pg_dump command")
+		log.Err(err).Msgf("Error start %s command", PgDump)
 		return err
 	}
 
@@ -71,18 +92,18 @@ func executePgDump(args ...string) error {
 
 	// Start gzip command
 	if err = gzipCmd.Start(); err != nil {
-		log.Err(err).Msg("Error start gzip command")
+		log.Err(err).Msgf("Error start %s command", Gzip)
 		return err
 	}
 
 	// Wait for both commands to finish
 	if err = pgDumpCmd.Wait(); err != nil {
-		log.Err(err).Msg("Error waiting for pg_dump command")
+		log.Err(err).Msgf("Error waiting for %s command", PgDump)
 		return err
 	}
 
 	if err = gzipCmd.Wait(); err != nil {
-		log.Err(err).Msg("Error waiting for gzip command")
+		log.Err(err).Msgf("Error waiting for %s command", Gzip)
 		return err
 	}
 

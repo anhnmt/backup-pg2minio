@@ -4,7 +4,6 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 )
 
 func init() {
@@ -12,29 +11,47 @@ func init() {
 }
 
 func Execute() {
-	if viper.GetBool(TelegramEnabled) {
-		t, err := NewTelegram()
+	cfg, err := New()
+	if err != nil {
+		log.Panic().Err(err).Msg("Failed to init config")
+	}
+
+	if cfg.Telegram.Enable {
+		t, err := NewTelegram(cfg.Telegram, cfg.Postgres.Database)
 		if err != nil {
 			log.Panic().Err(err).Msg("Failed to init telegram")
-			return
 		}
 
 		SetDefault(t)
 	}
 
-	backupSchedule := viper.GetString(BackupSchedule)
+	if cfg.Postgres.Prerun {
+		if err = preRunPostgres(cfg.Postgres); err != nil {
+			log.Panic().Err(err).Msg("Failed to pre-run postgres")
+		}
+	}
 
-	if backupSchedule == "" {
+	err = aliasSet(cfg.Minio)
+	if err != nil {
+		log.Panic().Err(err).Msg("Failed to set alias minio")
+	}
+
+	if cfg.Minio.Prerun {
+		if err = preRunMinio(cfg.Minio); err != nil {
+			log.Panic().Err(err).Msg("Failed to pre-run minio")
+		}
+	}
+
+	if cfg.Schedule.Cron == "" {
 		log.Info().Msgf("Start backup")
 
-		if err := start(time.Now()); err != nil {
+		if err = start(cfg, time.Now()); err != nil {
 			log.Panic().Err(err).Msg("Failed to start backup")
-			return
 		}
 
 		log.Info().Msg("Backup successfully")
 		return
 	}
 
-	schedule(backupSchedule)
+	Cron(cfg)
 }

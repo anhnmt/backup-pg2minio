@@ -7,10 +7,9 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
-	"github.com/spf13/viper"
 )
 
-type Telegram struct {
+type tele struct {
 	enabled  bool
 	database string
 	chatId   int64
@@ -20,31 +19,45 @@ type Telegram struct {
 var defaultTelegram atomic.Value
 
 func init() {
-	SetDefault(&Telegram{})
+	SetDefault(&tele{})
 }
 
-func Default() *Telegram {
-	return defaultTelegram.Load().(*Telegram)
+func Default() *tele {
+	return defaultTelegram.Load().(*tele)
 }
 
-func SetDefault(t *Telegram) {
+func SetDefault(t *tele) {
 	defaultTelegram.Store(t)
 }
 
-func NewTelegram() (*Telegram, error) {
-	bot, err := tgbotapi.NewBotAPI(viper.GetString(TelegramToken))
+func NewTelegram(cfg Telegram, dbName string) (*tele, error) {
+	if cfg.Enable == true {
+		if cfg.Token == "" {
+			return nil, errEnv("TELEGRAM_TOKEN")
+		}
+
+		if cfg.ChatId == 0 {
+			return nil, errEnv("TELEGRAM_CHAT_ID")
+		}
+	}
+
+	bot, err := tgbotapi.NewBotAPI(cfg.Token)
 	if err != nil {
 		return nil, err
 	}
 
-	t := &Telegram{
-		enabled:  viper.GetBool(TelegramEnabled),
-		database: viper.GetString(PostgresDatabase),
-		chatId:   viper.GetInt64(TelegramChatId),
+	t := &tele{
+		enabled:  cfg.Enable,
+		database: dbName,
+		chatId:   cfg.ChatId,
 		bot:      bot,
 	}
 
 	return t, nil
+}
+
+func errEnv(env string) error {
+	return fmt.Errorf("You need to set the %s environment variable", env)
 }
 
 func OK(text string, a ...any) error {
@@ -57,7 +70,7 @@ func Err(err error, text string, a ...any) error {
 	return Default().Msg(err, text, a...)
 }
 
-func (t *Telegram) Msg(err error, text string, a ...any) error {
+func (t *tele) Msg(err error, text string, a ...any) error {
 	if t == nil {
 		return nil
 	}
