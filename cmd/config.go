@@ -36,6 +36,8 @@ type Minio struct {
 	ApiVersion string `yaml:"apiVersion" env:"MINIO_API_VERSION" env-default:"S3v4"`
 	Clean      string `yaml:"clean" env:"MINIO_CLEAN"`
 	BackupDir  string `yaml:"backupDir" env:"MINIO_BACKUP_DIR"`
+	Insecure   bool   `yaml:"insecure" env:"MINIO_INSECURE"`
+	Debug      bool   `yaml:"debug" env:"MINIO_DEBUG"`
 }
 
 type Telegram struct {
