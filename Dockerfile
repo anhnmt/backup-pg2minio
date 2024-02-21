@@ -1,6 +1,6 @@
 FROM golang:1.21-alpine as builder
 
-ENV MINIO_CLIENT_VERSION=RELEASE.2024-01-16T16-06-34Z
+ENV MINIO_CLIENT_VERSION=RELEASE.2024-02-16T11-05-48Z
 
 WORKDIR /app
 
@@ -19,7 +19,7 @@ RUN go install github.com/minio/mc@${MINIO_CLIENT_VERSION}
 
 FROM alpine:3.19 as libs
 
-ENV POSTGRES_CLIENT_VERSION=16.1-r0
+ENV POSTGRES_CLIENT_VERSION=16.2-r0
 
 RUN apk update && apk upgrade
 
