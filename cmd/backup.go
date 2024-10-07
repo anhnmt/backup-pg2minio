@@ -1,4 +1,4 @@
-package cmd
+package main
 
 import (
 	"fmt"
@@ -12,9 +12,15 @@ import (
 	"github.com/docker/go-units"
 	"github.com/robfig/cron/v3"
 	"github.com/rs/zerolog/log"
+
+	"github.com/anhnmt/backup-pg2minio/internal/pkg/config"
+	"github.com/anhnmt/backup-pg2minio/internal/pkg/minio"
+	"github.com/anhnmt/backup-pg2minio/internal/pkg/postgres"
+	"github.com/anhnmt/backup-pg2minio/internal/pkg/telegram"
+	"github.com/anhnmt/backup-pg2minio/internal/utils"
 )
 
-func Cron(cfg Config) {
+func Cron(cfg config.Config) {
 	schedule := cfg.Schedule.Cron
 
 	log.Info().Msgf("New cron: %s", schedule)
@@ -35,7 +41,7 @@ func Cron(cfg Config) {
 		log.Info().Msgf("Start backup at: %s", now.Format(time.RFC3339))
 
 		if err := start(cfg, now); err != nil {
-			Err(err, "Failed to start backup")
+			telegram.Err(err, "Failed to start backup")
 		}
 	})
 	if err != nil {
@@ -54,19 +60,19 @@ func Cron(cfg Config) {
 	return
 }
 
-func start(cfg Config, now time.Time) (err error) {
+func start(cfg config.Config, now time.Time) (err error) {
 	defer func(_err *error) {
-		info, err2 := os.Stat(PgDumpFile)
+		info, err2 := os.Stat(utils.PgDumpFile)
 		if os.IsNotExist(err2) {
 			return
 		}
 
-		if err2 = os.Remove(PgDumpFile); err2 != nil {
-			Err(err, "Failed to remove pg_dump file")
+		if err2 = os.Remove(utils.PgDumpFile); err2 != nil {
+			telegram.Err(err, "Failed to remove pg_dump file")
 		}
 
 		if *_err == nil {
-			OK("Backup successful: %s, size: %s",
+			telegram.OK("Backup successful: %s, size: %s",
 				time.Since(now).String(),
 				units.BytesSize(float64(info.Size())),
 			)
@@ -74,12 +80,12 @@ func start(cfg Config, now time.Time) (err error) {
 
 	}(&err)
 
-	err = pgDump(cfg.Postgres)
+	err = postgres.PgDump(cfg.Postgres)
 	if err != nil {
 		return err
 	}
 
-	err = storage(cfg.Minio, cfg.Postgres.Database)
+	err = minio.Storage(cfg.Minio, cfg.Postgres.Database)
 	if err != nil {
 		return err
 	}

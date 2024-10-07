@@ -1,4 +1,4 @@
-package cmd
+package utils
 
 const (
 	PSQL   = "psql"

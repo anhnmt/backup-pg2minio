@@ -1,4 +1,4 @@
-package cmd
+package minio
 
 import (
 	"fmt"
@@ -8,10 +8,13 @@ import (
 	"time"
 
 	"github.com/rs/zerolog/log"
+
+	"github.com/anhnmt/backup-pg2minio/internal/pkg/config"
+	"github.com/anhnmt/backup-pg2minio/internal/utils"
 )
 
-func storage(cfg Minio, dbName string) error {
-	bucket := fmt.Sprintf("%s/%s", Alias, cfg.Bucket)
+func Storage(cfg config.Minio, dbName string) error {
+	bucket := fmt.Sprintf("%s/%s", utils.Alias, cfg.Bucket)
 	backupDir := fmt.Sprintf("%s/%s", bucket, dbName)
 
 	if cfg.BackupDir != "" {
@@ -35,11 +38,11 @@ func storage(cfg Minio, dbName string) error {
 	return nil
 }
 
-func aliasSet(cfg Minio) error {
+func AliasSet(cfg config.Minio) error {
 	args := []string{
 		"alias",
 		"set",
-		Alias,
+		utils.Alias,
 		cfg.Server,
 		cfg.AccessKey,
 		cfg.SecretKey,
@@ -54,19 +57,19 @@ func aliasSet(cfg Minio) error {
 		args = append(args, "--debug")
 	}
 
-	log.Info().Msgf("Executing: %s %s", MC, replaceMinioSecret(strings.Join(args, " ")))
-	mcCmd := exec.Command(MC, args...)
+	log.Info().Msgf("Executing: %s %s", utils.MC, utils.ReplaceMinioSecret(strings.Join(args, " ")))
+	mcCmd := exec.Command(utils.MC, args...)
 	mcCmd.Stdout = os.Stdout
 	mcCmd.Stderr = os.Stderr
 
 	return mcCmd.Run()
 }
 
-func preRunMinio(cfg Minio) error {
+func PreRunMinio(cfg config.Minio) error {
 	args := []string{
 		"version",
 		"info",
-		fmt.Sprintf("%s/%s", Alias, cfg.Bucket),
+		fmt.Sprintf("%s/%s", utils.Alias, cfg.Bucket),
 		"-q",
 	}
 
@@ -78,21 +81,21 @@ func preRunMinio(cfg Minio) error {
 		args = append(args, "--debug")
 	}
 
-	log.Info().Msgf("Executing: %s %s", MC, strings.Join(args, " "))
-	mcCmd := exec.Command(MC, args...)
+	log.Info().Msgf("Executing: %s %s", utils.MC, strings.Join(args, " "))
+	mcCmd := exec.Command(utils.MC, args...)
 	mcCmd.Stdout = os.Stdout
 	mcCmd.Stderr = os.Stderr
 
 	return mcCmd.Run()
 }
 
-func mcCopy(cfg Minio, backupDir string, dbName string) error {
+func mcCopy(cfg config.Minio, backupDir string, dbName string) error {
 	now := time.Now().Format(time.RFC3339)
 	fileName := fmt.Sprintf("%s_%s.sql.gz", dbName, now)
 
 	args := []string{
 		"cp",
-		fmt.Sprintf("./%s", PgDumpFile),
+		fmt.Sprintf("./%s", utils.PgDumpFile),
 	}
 
 	if cfg.Insecure {
@@ -105,15 +108,15 @@ func mcCopy(cfg Minio, backupDir string, dbName string) error {
 
 	args = append(args, fmt.Sprintf("%s/%s", backupDir, fileName))
 
-	log.Info().Msgf("Executing: %s %s", MC, replaceMinioSecret(strings.Join(args, " ")))
-	mcCmd := exec.Command(MC, args...)
+	log.Info().Msgf("Executing: %s %s", utils.MC, utils.ReplaceMinioSecret(strings.Join(args, " ")))
+	mcCmd := exec.Command(utils.MC, args...)
 	mcCmd.Stdout = os.Stdout
 	mcCmd.Stderr = os.Stderr
 
 	return mcCmd.Run()
 }
 
-func mcClean(cfg Minio, backupDir, clean string) error {
+func mcClean(cfg config.Minio, backupDir, clean string) error {
 	args := []string{
 		"find",
 		backupDir,
@@ -131,8 +134,8 @@ func mcClean(cfg Minio, backupDir, clean string) error {
 		args = append(args, "--debug")
 	}
 
-	log.Info().Msgf("Executing: %s %s", MC, replaceMinioSecret(strings.Join(args, " ")))
-	mcCmd := exec.Command(MC, args...)
+	log.Info().Msgf("Executing: %s %s", utils.MC, utils.ReplaceMinioSecret(strings.Join(args, " ")))
+	mcCmd := exec.Command(utils.MC, args...)
 	mcCmd.Stdout = os.Stdout
 	mcCmd.Stderr = os.Stderr
 

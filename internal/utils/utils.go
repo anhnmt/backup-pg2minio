@@ -1,11 +1,11 @@
-package cmd
+package utils
 
 import (
 	"fmt"
 	"regexp"
 )
 
-func replacePostgresql(str string) string {
+func ReplacePostgresql(str string) string {
 	regex, err := regexp.Compile(` postgresql://(.*) `)
 	if err != nil {
 		return str
@@ -21,7 +21,7 @@ func replacePostgresql(str string) string {
 	return str
 }
 
-func replaceMinioSecret(str string) string {
+func ReplaceMinioSecret(str string) string {
 	regex, err := regexp.Compile(`set ` + Alias + ` (.*) (.*) (.*) --api`)
 	if err != nil {
 		return str

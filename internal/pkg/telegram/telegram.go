@@ -1,4 +1,4 @@
-package cmd
+package telegram
 
 import (
 	"fmt"
@@ -7,6 +7,8 @@ import (
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 	"github.com/rs/zerolog/log"
+
+	"github.com/anhnmt/backup-pg2minio/internal/pkg/config"
 )
 
 type tele struct {
@@ -30,7 +32,7 @@ func SetDefault(t *tele) {
 	defaultTelegram.Store(t)
 }
 
-func NewTelegram(cfg Telegram, dbName string) (*tele, error) {
+func NewTelegram(cfg config.Telegram, dbName string) (*tele, error) {
 	if cfg.Enable == true {
 		if cfg.Token == "" {
 			return nil, errEnv("TELEGRAM_TOKEN")

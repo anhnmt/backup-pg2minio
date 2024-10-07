@@ -1,4 +1,4 @@
-package cmd
+package postgres
 
 import (
 	"fmt"
@@ -7,9 +7,12 @@ import (
 	"strings"
 
 	"github.com/rs/zerolog/log"
+
+	"github.com/anhnmt/backup-pg2minio/internal/pkg/config"
+	"github.com/anhnmt/backup-pg2minio/internal/utils"
 )
 
-func pgDump(cfg Postgres) error {
+func PgDump(cfg config.Postgres) error {
 	conn := fmt.Sprintf(
 		"postgresql://%s:%s@%s:%d/%s",
 		cfg.User,
@@ -32,10 +35,10 @@ func pgDump(cfg Postgres) error {
 		args = append(args, strings.Split(pgOpts, " ")...)
 	}
 
-	return executePgDump(args...)
+	return ExecutePgDump(args...)
 }
 
-func preRunPostgres(cfg Postgres) error {
+func PreRunPostgres(cfg config.Postgres) error {
 	conn := fmt.Sprintf(
 		"postgresql://%s:%s@%s:%d/%s",
 		cfg.User,
@@ -50,16 +53,16 @@ func preRunPostgres(cfg Postgres) error {
 		"-c", "SELECT 1",
 	}
 
-	log.Info().Msgf("Executing: %s %s", PSQL, replacePostgresql(strings.Join(args, " ")))
-	psqlCmd := exec.Command(PSQL, args...)
+	log.Info().Msgf("Executing: %s %s", utils.PSQL, utils.ReplacePostgresql(strings.Join(args, " ")))
+	psqlCmd := exec.Command(utils.PSQL, args...)
 	psqlCmd.Stderr = os.Stderr
 
 	return psqlCmd.Run()
 }
 
-func executePgDump(args ...string) error {
-	log.Info().Msgf("Executing: %s %s", PgDump, replacePostgresql(strings.Join(args, " ")))
-	pgDumpCmd := exec.Command(PgDump, args...)
+func ExecutePgDump(args ...string) error {
+	log.Info().Msgf("Executing: %s %s", utils.PgDump, utils.ReplacePostgresql(strings.Join(args, " ")))
+	pgDumpCmd := exec.Command(utils.PgDump, args...)
 	pgDumpCmd.Stderr = os.Stderr
 
 	// Create a pipe to connect the stdout of pg_dump to the stdin of gzip
@@ -71,18 +74,18 @@ func executePgDump(args ...string) error {
 
 	// Start pg_dump command
 	if err = pgDumpCmd.Start(); err != nil {
-		log.Err(err).Msgf("Error start %s command", PgDump)
+		log.Err(err).Msgf("Error start %s command", utils.PgDump)
 		return err
 	}
 
 	// Create the gzip command and link its stdin to the output of pg_dump
-	log.Info().Msgf("Executing: %s", Gzip)
-	gzipCmd := exec.Command(Gzip)
+	log.Info().Msgf("Executing: %s", utils.Gzip)
+	gzipCmd := exec.Command(utils.Gzip)
 	gzipCmd.Stdin = pipe
 	gzipCmd.Stderr = os.Stderr
 
 	// Create a file to save the output of gzip
-	outputFile, err := os.Create(PgDumpFile)
+	outputFile, err := os.Create(utils.PgDumpFile)
 	if err != nil {
 		log.Err(err).Msg("Error creating output file")
 		return err
@@ -93,18 +96,18 @@ func executePgDump(args ...string) error {
 
 	// Start gzip command
 	if err = gzipCmd.Start(); err != nil {
-		log.Err(err).Msgf("Error start %s command", Gzip)
+		log.Err(err).Msgf("Error start %s command", utils.Gzip)
 		return err
 	}
 
 	// Wait for both commands to finish
 	if err = pgDumpCmd.Wait(); err != nil {
-		log.Err(err).Msgf("Error waiting for %s command", PgDump)
+		log.Err(err).Msgf("Error waiting for %s command", utils.PgDump)
 		return err
 	}
 
 	if err = gzipCmd.Wait(); err != nil {
-		log.Err(err).Msgf("Error waiting for %s command", Gzip)
+		log.Err(err).Msgf("Error waiting for %s command", utils.Gzip)
 		return err
 	}
 

@@ -1,6 +1,6 @@
-FROM golang:1.23-alpine as builder
+FROM golang:1.23-alpine AS builder
 
-ENV MINIO_CLIENT_VERSION=RELEASE.2024-10-02T17-50-41Z
+ENV MINIO_CLIENT_VERSION=RELEASE.2024-10-02T08-27-28Z
 
 WORKDIR /app
 
@@ -13,13 +13,13 @@ RUN go mod download
 COPY . .
 
 # Build the Go app
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o pg2minio ./main.go
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o pg2minio ./cmd
 
 RUN go install github.com/minio/mc@${MINIO_CLIENT_VERSION}
 
-FROM alpine:3.19 as libs
+FROM alpine:3.19 AS libs
 
-ENV POSTGRES_CLIENT_VERSION=16.2-r0
+ENV POSTGRES_CLIENT_VERSION=16.4-r0
 
 RUN apk update && apk upgrade
 
