@@ -1,43 +1,48 @@
-package cmd
+package main
 
 import (
 	"time"
 
 	"github.com/rs/zerolog/log"
+
+	"github.com/anhnmt/backup-pg2minio/internal/pkg/config"
+	"github.com/anhnmt/backup-pg2minio/internal/pkg/minio"
+	"github.com/anhnmt/backup-pg2minio/internal/pkg/postgres"
+	"github.com/anhnmt/backup-pg2minio/internal/pkg/telegram"
 )
 
 func init() {
 	bootstrap()
 }
 
-func Execute() {
-	cfg, err := New()
+func main() {
+	cfg, err := config.New()
 	if err != nil {
 		log.Panic().Err(err).Msg("Failed to init config")
 	}
 
 	if cfg.Telegram.Enable {
-		t, err := NewTelegram(cfg.Telegram, cfg.Postgres.Database)
+		t, err := telegram.NewTelegram(cfg.Telegram, cfg.Postgres.Database)
 		if err != nil {
 			log.Panic().Err(err).Msg("Failed to init telegram")
 		}
 
-		SetDefault(t)
+		telegram.SetDefault(t)
 	}
 
 	if cfg.Postgres.Prerun {
-		if err = preRunPostgres(cfg.Postgres); err != nil {
+		if err = postgres.PreRunPostgres(cfg.Postgres); err != nil {
 			log.Panic().Err(err).Msg("Failed to pre-run postgres")
 		}
 	}
 
-	err = aliasSet(cfg.Minio)
+	err = minio.AliasSet(cfg.Minio)
 	if err != nil {
 		log.Panic().Err(err).Msg("Failed to set alias minio")
 	}
 
 	if cfg.Minio.Prerun {
-		if err = preRunMinio(cfg.Minio); err != nil {
+		if err = minio.PreRunMinio(cfg.Minio); err != nil {
 			log.Panic().Err(err).Msg("Failed to pre-run minio")
 		}
 	}
