@@ -1,4 +1,4 @@
-FROM golang:1.22-alpine as builder
+FROM golang:1.23-alpine as builder
 
 ENV MINIO_CLIENT_VERSION=RELEASE.2024-03-30T15-29-52Z
 
