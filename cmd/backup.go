@@ -61,7 +61,7 @@ func start(cfg Config, now time.Time) (err error) {
 			return
 		}
 
-		if err2 = removeFile(PgDumpFile); err2 != nil {
+		if err2 = os.Remove(PgDumpFile); err2 != nil {
 			Err(err, "Failed to remove pg_dump file")
 		}
 
