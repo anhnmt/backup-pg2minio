@@ -51,7 +51,6 @@ func Cron(cfg Config) {
 	<-ch
 
 	stop(c, wg)
-	return
 }
 
 func start(cfg Config, now time.Time) (err error) {
@@ -66,10 +65,20 @@ func start(cfg Config, now time.Time) (err error) {
 		}
 
 		if *_err == nil {
+
+			size := info.Size()
+
+			BackupDuration(now)
+			LastBackupSize(size)
+			SetBackupStatus(true)
+			LastBackupTimestamp()
+
 			OK("Backup successful: %s, size: %s",
-				time.Since(now).String(),
-				units.BytesSize(float64(info.Size())),
+				time.Since(now),
+				units.BytesSize(float64(size)),
 			)
+		} else {
+			SetBackupStatus(false)
 		}
 
 	}(&err)

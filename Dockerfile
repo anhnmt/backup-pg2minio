@@ -1,4 +1,4 @@
-FROM golang:1.22-alpine as builder
+FROM golang:1.22-alpine AS builder
 
 ENV MINIO_CLIENT_VERSION=RELEASE.2024-03-30T15-29-52Z
 
@@ -17,9 +17,9 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o pg2minio ./main.g
 
 RUN go install github.com/minio/mc@${MINIO_CLIENT_VERSION}
 
-FROM alpine:3.19 as libs
+FROM alpine:3.19 AS libs
 
-ENV POSTGRES_CLIENT_VERSION=16.2-r0
+ENV POSTGRES_CLIENT_VERSION=16.6-r0
 
 RUN apk update && apk upgrade
 
@@ -41,9 +41,10 @@ COPY --from=builder /go/bin/mc /usr/local/bin/mc
 RUN chmod +x /usr/local/bin/mc
 
 RUN chmod 0777 /app
+RUN chmod 0777 /usr/local/bin
 
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 USER appuser
 
 CMD ["/usr/local/bin/pg2minio"]
-#ENTRYPOINT ["tail", "-f", "/dev/null"]
+# ENTRYPOINT ["tail", "-f", "/dev/null"]
