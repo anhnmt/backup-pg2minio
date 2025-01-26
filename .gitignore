@@ -3,3 +3,5 @@
 docker-compose-*.yml
 *.gz
 dist/
+.envrc
+backup-pg2minio

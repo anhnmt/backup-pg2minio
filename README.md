@@ -63,6 +63,12 @@ services:
 - `TELEGRAM_CHAT_ID` - Chat ID for example `-40054422`
 - `TELEGRAM_TOKEN` - Telegram bot token for example `610864305:AAGw2BVSPYPjcc8940bswQTRUZIssSFJA`, without `bot` at the beginning
 
+- `METRICS_ENABLED` - Set `true` to enable metrics collection. Default is `false`.
+- `METRICS_NAMESPACE` - Namespace for the metrics. Default is empty.
+- `METRICS_SUBSYSTEM` - Subsystem for the metrics. Default is empty.
+- `METRICS_PORT` - Port for the metrics endpoint. Default is `8080`.
+- `METRICS_PATH` - Path for the metrics endpoint. Default is `/metrics`.
+
 # some script from 
 -  go-cron : https://github.com/michaloo/go-cron
 -  docker-backup-postgres-s3 : https://github.com/wonderu/docker-backup-postgres-s3

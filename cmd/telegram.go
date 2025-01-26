@@ -19,19 +19,19 @@ type tele struct {
 var defaultTelegram atomic.Value
 
 func init() {
-	SetDefault(&tele{})
+	SetDefaultTelegram(&tele{})
 }
 
-func Default() *tele {
+func DefaultTelegram() *tele {
 	return defaultTelegram.Load().(*tele)
 }
 
-func SetDefault(t *tele) {
+func SetDefaultTelegram(t *tele) {
 	defaultTelegram.Store(t)
 }
 
 func NewTelegram(cfg Telegram, dbName string) (*tele, error) {
-	if cfg.Enable == true {
+	if cfg.Enable {
 		if cfg.Token == "" {
 			return nil, errEnv("TELEGRAM_TOKEN")
 		}
@@ -62,12 +62,12 @@ func errEnv(env string) error {
 
 func OK(text string, a ...any) error {
 	log.Info().Msgf(text, a...)
-	return Default().Msg(nil, text, a...)
+	return DefaultTelegram().Msg(nil, text, a...)
 }
 
 func Err(err error, text string, a ...any) error {
 	log.Err(err).Msgf(text, a...)
-	return Default().Msg(err, text, a...)
+	return DefaultTelegram().Msg(err, text, a...)
 }
 
 func (t *tele) Msg(err error, text string, a ...any) error {

@@ -13,6 +13,7 @@ type Config struct {
 	Postgres `json:"postgres"`
 	Minio    `json:"minio"`
 	Telegram `json:"telegram"`
+	Metrics  `json:"metrics"`
 }
 
 type Schedule struct {
@@ -46,6 +47,14 @@ type Telegram struct {
 	Enable bool   `env:"TELEGRAM_ENABLED"`
 	ChatId int64  `env:"TELEGRAM_CHAT_ID"`
 	Token  string `env:"TELEGRAM_TOKEN"`
+}
+
+type Metrics struct {
+	Enable    bool   `env:"METRICS_ENABLED" env-default:"false"`
+	Namespace string `env:"METRICS_NAMESPACE"`
+	Subsystem string `env:"METRICS_SUBSYSTEM"`
+	Port      string `env:"METRICS_PORT" env-default:"8080"`
+	Path      string `env:"METRICS_PATH" env-default:"/metrics"`
 }
 
 func New() (Config, error) {
