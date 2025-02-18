@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os/signal"
@@ -17,7 +18,6 @@ const (
 	defaultReadTimeout    = 5 * time.Second
 	defaultWriteTimeout   = 10 * time.Second
 	defaultIdleTimeout    = 30 * time.Second
-	defaultSessionTimeout = 6 * time.Second
 	serverShutdownTimeout = 10 * time.Second
 )
 
@@ -50,7 +50,7 @@ func Execute() {
 
 		mux.Handle(cfg.Metrics.Path, promhttp.HandlerFor(promReg, promhttp.HandlerOpts{}))
 
-		SetDefaultMetrics((promMetrics))
+		SetDefaultMetrics(promMetrics)
 
 		setupHTTPServer(ctxPool, mux, cfg)
 	}
@@ -95,7 +95,7 @@ func Execute() {
 	Cron(cfg)
 
 	if err = ctxPool.Wait(); err != nil {
-		log.Panic().Err(err).Msg("error in goroutine pool")
+		log.Panic().Err(err).Msg("Error in goroutine pool")
 	}
 }
 
@@ -108,11 +108,11 @@ func setupHTTPServer(ctxPool *pool.ContextPool, mux *http.ServeMux, env Config) 
 		IdleTimeout:  defaultIdleTimeout,
 	}
 
-	log.Info().Msg("initialized metrics HTTP server")
+	log.Info().Msg("Initialized metrics HTTP server")
 
 	ctxPool.Go(func(ctx context.Context) error {
 		go func() {
-			if err := httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			if err := httpServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
 				log.Error().Err(err).Msg("HTTP server ListenAndServe failed")
 			}
 		}()
@@ -124,7 +124,6 @@ func setupHTTPServer(ctxPool *pool.ContextPool, mux *http.ServeMux, env Config) 
 		defer cancel()
 
 		if err := httpServer.Shutdown(shutdownCtx); err != nil {
-			log.Error().Err(err).Msg("HTTP server Shutdown failed")
 			return fmt.Errorf("HTTP server Shutdown failed: %w", err)
 		}
 
