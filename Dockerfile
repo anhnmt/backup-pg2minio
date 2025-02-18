@@ -1,6 +1,10 @@
-FROM golang:1.22-alpine AS builder
+ARG GO_VERSION=${GO_VERSION:-"1.24-alpine"}
+ARG ALPINE_VERSION=${ALPINE_VERSION:-"3.21"}
+ARG MINIO_CLIENT_VERSION=${MINIO_CLIENT_VERSION:-"RELEASE.2025-02-08T19-14-21Z"}
+ARG POSTGRES_CLIENT_VERSION=${POSTGRES_CLIENT_VERSION:-"17.2-r0"}
 
-ENV MINIO_CLIENT_VERSION=RELEASE.2024-03-30T15-29-52Z
+FROM golang:${GO_VERSION} AS builder
+ARG MINIO_CLIENT_VERSION
 
 WORKDIR /app
 
@@ -17,13 +21,12 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o pg2minio ./main.g
 
 RUN go install github.com/minio/mc@${MINIO_CLIENT_VERSION}
 
-FROM alpine:3.19 AS libs
-
-ENV POSTGRES_CLIENT_VERSION=16.6-r0
+FROM alpine:${ALPINE_VERSION} AS libs
+ARG POSTGRES_CLIENT_VERSION
 
 RUN apk update && apk upgrade
 
-RUN apk add --update --no-cache postgresql16-client=${POSTGRES_CLIENT_VERSION} ca-certificates \
+RUN apk add --update --no-cache postgresql17-client=${POSTGRES_CLIENT_VERSION} ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/log/* \
     && rm -rf /var/cache/apk/*
