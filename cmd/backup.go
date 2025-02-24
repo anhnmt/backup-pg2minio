@@ -54,7 +54,7 @@ func Cron(cfg Config) {
 }
 
 func start(cfg Config, now time.Time) (err error) {
-	defer func(_err *error) {
+	defer func() {
 		info, err2 := os.Stat(PgDumpFile)
 		if os.IsNotExist(err2) {
 			return
@@ -64,24 +64,22 @@ func start(cfg Config, now time.Time) (err error) {
 			Err(err, "Failed to remove pg_dump file")
 		}
 
-		if *_err == nil {
-
-			size := info.Size()
-
-			BackupDuration(now)
-			LastBackupSize(size)
-			SetBackupStatus(true)
-			LastBackupTimestamp()
+		if err == nil {
+			if cfg.Metrics.Enable {
+				BackupDuration(now)
+				LastBackupSize(info.Size())
+				SetBackupStatus(true)
+				LastBackupTimestamp()
+			}
 
 			OK("Backup successful: %s, size: %s",
 				time.Since(now),
-				units.BytesSize(float64(size)),
+				units.BytesSize(float64(info.Size())),
 			)
-		} else {
+		} else if cfg.Metrics.Enable {
 			SetBackupStatus(false)
 		}
-
-	}(&err)
+	}()
 
 	err = pgDump(cfg.Postgres)
 	if err != nil {
