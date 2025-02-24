@@ -1,11 +1,9 @@
-ARG GO_VERSION=${GO_VERSION:-"1.24-alpine"}
+ARG GO_VERSION=${GO_VERSION:-"1.24"}
 ARG ALPINE_VERSION=${ALPINE_VERSION:-"3.21"}
-ARG MINIO_CLIENT_VERSION=${MINIO_CLIENT_VERSION:-"RELEASE.2025-02-15T10-36-16Z"}
-ARG POSTGRES_CLIENT_VERSION=${POSTGRES_CLIENT_VERSION:-"17.2-r0"}
+ARG MINIO_CLIENT_VERSION=${MINIO_CLIENT_VERSION:-"0.20241117.193525-r2"}
+ARG POSTGRES_CLIENT_VERSION=${POSTGRES_CLIENT_VERSION:-"17.4-r0"}
 
-FROM golang:${GO_VERSION} AS builder
-ARG MINIO_CLIENT_VERSION
-
+FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder
 WORKDIR /app
 
 # Copy go mod and sum files
@@ -19,29 +17,24 @@ COPY . .
 # Build the Go app
 RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o pg2minio ./main.go
 
-RUN go install github.com/minio/mc@${MINIO_CLIENT_VERSION}
-
 FROM alpine:${ALPINE_VERSION} AS libs
 ARG POSTGRES_CLIENT_VERSION
+ARG MINIO_CLIENT_VERSION
 
-RUN apk update && apk upgrade
-
-RUN apk add --update --no-cache postgresql17-client=${POSTGRES_CLIENT_VERSION} ca-certificates \
+RUN apk add --update --no-cache \
+    	postgresql17-client=${POSTGRES_CLIENT_VERSION} \
+			minio-client=${MINIO_CLIENT_VERSION} \
+			ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/log/* \
     && rm -rf /var/cache/apk/*
 
 FROM scratch
-
 WORKDIR /app
 
 COPY --from=libs / /
-
 COPY --from=builder /app/pg2minio /usr/local/bin/pg2minio
 RUN chmod +x /usr/local/bin/pg2minio
-
-COPY --from=builder /go/bin/mc /usr/local/bin/mc
-RUN chmod +x /usr/local/bin/mc
 
 RUN chmod 0777 /app
 RUN chmod 0777 /usr/local/bin
