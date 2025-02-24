@@ -70,6 +70,7 @@ services:
 - `METRICS_PATH` - Path for the metrics endpoint. Default is `/metrics`.
 
 # some script from 
+-  alpine packages : https://pkgs.alpinelinux.org/packages
 -  go-cron : https://github.com/michaloo/go-cron
 -  docker-backup-postgres-s3 : https://github.com/wonderu/docker-backup-postgres-s3
 -  postgres-backup-s3 : https://github.com/schickling/dockerfiles/tree/master/postgres-backup-s3 
