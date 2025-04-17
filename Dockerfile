@@ -1,7 +1,5 @@
 ARG GO_VERSION=${GO_VERSION:-"1.24"}
 ARG ALPINE_VERSION=${ALPINE_VERSION:-"3.21"}
-ARG MINIO_CLIENT_VERSION=${MINIO_CLIENT_VERSION:-"0.20241117.193525-r2"}
-ARG POSTGRES_CLIENT_VERSION=${POSTGRES_CLIENT_VERSION:-"17.4-r0"}
 
 FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder
 WORKDIR /app
@@ -22,8 +20,8 @@ ARG POSTGRES_CLIENT_VERSION
 ARG MINIO_CLIENT_VERSION
 
 RUN apk add --update --no-cache \
-    	postgresql17-client=${POSTGRES_CLIENT_VERSION} \
-			minio-client=${MINIO_CLIENT_VERSION} \
+    	postgresql17-client \
+			minio-client \
 			ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /var/log/* \
