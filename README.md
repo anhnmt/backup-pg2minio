@@ -2,13 +2,7 @@
 Backup Postgresql to Minio
 
 # Supported Versions
-* 11
-* 12
-* 13
-* 14
-* 15
-* 16
-* 17
+* 11 - 18
 
 #### `cp .env.example .env`
 ```
