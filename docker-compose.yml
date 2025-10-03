@@ -5,6 +5,7 @@ services:
     container_name: pg2minio
     image: anhnmt/backup-pg2minio:latest
     build:
+      platforms: [linux/amd64, linux/arm64]
       context: .
       dockerfile: ./Dockerfile
     network_mode: host

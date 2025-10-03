@@ -1,12 +1,9 @@
 ARG GO_VERSION=${GO_VERSION:-"1.25"}
 ARG ALPINE_VERSION=${ALPINE_VERSION:-"3.21"}
 
-FROM alpine:${ALPINE_VERSION} AS base
-ARG POSTGRES_CLIENT_VERSION
-ARG MINIO_CLIENT_VERSION
+FROM postgres:18-alpine${ALPINE_VERSION} AS base
 
 RUN apk add --update --no-cache \
-    	postgresql17-client \
 			ca-certificates \
 			curl \
 		&& curl -Lo /usr/bin/mc https://dl.min.io/client/mc/release/linux-amd64/mc \
