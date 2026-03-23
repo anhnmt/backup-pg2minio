@@ -14,7 +14,7 @@ type Prometheus struct {
 	lastBackupTimestamp prometheus.Gauge
 	lastBackupSize      prometheus.Gauge
 	backupDuration      prometheus.Histogram
-	backupStatus        prometheus.GaugeVec
+	backupStatus        prometheus.Gauge
 }
 
 var defaultPrometheus atomic.Value
@@ -57,12 +57,12 @@ func NewPrometheusMetrics(namespace, subsys string) (*Prometheus, *prometheus.Re
 		Subsystem: subsys,
 	})
 
-	prom.backupStatus = *prometheus.NewGaugeVec(prometheus.GaugeOpts{
+	prom.backupStatus = prometheus.NewGauge(prometheus.GaugeOpts{
 		Name:      "backup_last_status",
 		Help:      "The status of the last backup (1=success, 0=failure).",
 		Namespace: namespace,
 		Subsystem: subsys,
-	}, []string{"status"})
+	})
 
 	errs = append(errs,
 		promReg.Register(collectors.NewBuildInfoCollector()),
@@ -98,6 +98,5 @@ func SetBackupStatus(success bool) {
 	if success {
 		status = 1.0
 	}
-	DefaultMetrics().backupStatus.WithLabelValues("success").Set(status)
-	DefaultMetrics().backupStatus.WithLabelValues("failure").Set(1.0 - status)
+	DefaultMetrics().backupStatus.Set(status)
 }
