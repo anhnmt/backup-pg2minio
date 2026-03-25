@@ -32,6 +32,10 @@ func Execute() {
 		log.Panic().Err(err).Msg("Failed to init config")
 	}
 
+	if cfg.Metrics.Enable && cfg.Schedule.Cron == "" {
+		log.Panic().Msg("Metrics cannot be enabled without a cron schedule")
+	}
+
 	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
@@ -40,7 +44,7 @@ func Execute() {
 		WithFirstError().
 		WithCancelOnError()
 
-	if cfg.Metrics.Enable && cfg.Schedule.Cron != "" {
+	if cfg.Metrics.Enable {
 		mux := http.NewServeMux()
 
 		promMetrics, promReg, err := NewPrometheusMetrics(cfg.Metrics.Namespace, cfg.Metrics.Subsystem)
