@@ -6,13 +6,13 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"sync"
 	"time"
 
 	"github.com/rs/zerolog/log"
 	"github.com/sourcegraph/conc/pool"
 )
 
+// Constants for HTTP trigger server timeouts
 const (
 	defaultTriggerReadTimeout  = 5 * time.Second
 	defaultTriggerWriteTimeout = 10 * time.Second
@@ -23,9 +23,6 @@ const (
 // Global trigger server state
 var (
 	triggerServer *http.Server
-	triggerPool   *pool.ContextPool
-	triggerMutex  sync.Mutex
-	triggerCtx    context.Context
 	triggerCancel context.CancelFunc
 )
 
@@ -36,6 +33,7 @@ type TriggerResponse struct {
 }
 
 // StartTriggerServer starts the HTTP trigger server
+// This enables manual backup triggers via HTTP endpoint
 func StartTriggerServer(cfg Config, ctxPool *pool.ContextPool) error {
 	if !cfg.HTTPTrigger.Enable {
 		log.Info().Msg("HTTP trigger server is disabled")
@@ -44,6 +42,7 @@ func StartTriggerServer(cfg Config, ctxPool *pool.ContextPool) error {
 
 	log.Info().Msgf("Starting HTTP trigger server on port %s", cfg.HTTPTrigger.Port)
 
+	// Create HTTP multiplexer with routes
 	mux := http.NewServeMux()
 
 	// POST /trigger - trigger a manual backup
@@ -55,7 +54,7 @@ func StartTriggerServer(cfg Config, ctxPool *pool.ContextPool) error {
 
 		log.Info().Msg("Received manual backup trigger request")
 
-		// Trigger the backup in a goroutine
+		// Trigger the backup in a goroutine (non-blocking)
 		go func() {
 			now := time.Now()
 			if err := start(cfg, now); err != nil {
@@ -65,9 +64,7 @@ func StartTriggerServer(cfg Config, ctxPool *pool.ContextPool) error {
 			log.Info().Msg("Manual backup completed successfully")
 		}()
 
-		// Wait for backup to start
-		time.Sleep(100 * time.Millisecond)
-
+		// Return immediately while backup runs in background
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(TriggerResponse{
 			Status:  "success",
@@ -84,6 +81,7 @@ func StartTriggerServer(cfg Config, ctxPool *pool.ContextPool) error {
 		})
 	})
 
+	// Initialize HTTP server with timeouts
 	triggerServer = &http.Server{
 		Addr:         fmt.Sprintf(":%s", cfg.HTTPTrigger.Port),
 		Handler:      mux,
@@ -92,9 +90,10 @@ func StartTriggerServer(cfg Config, ctxPool *pool.ContextPool) error {
 		IdleTimeout:  defaultTriggerIdleTimeout,
 	}
 
-	// Store context for graceful shutdown
-	triggerCtx, triggerCancel = context.WithCancel(context.Background())
+	// Store cancel function for graceful shutdown
+	_, triggerCancel = context.WithCancel(context.Background())
 
+	// Start server in background with graceful shutdown
 	ctxPool.Go(func(ctx context.Context) error {
 		go func() {
 			if err := triggerServer.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
@@ -117,37 +116,5 @@ func StartTriggerServer(cfg Config, ctxPool *pool.ContextPool) error {
 	})
 
 	log.Info().Msgf("HTTP trigger server started at http://localhost:%s%s", cfg.HTTPTrigger.Port, cfg.HTTPTrigger.Path)
-	return nil
-}
-
-// StopTriggerServer gracefully stops the HTTP trigger server
-func StopTriggerServer() {
-	if triggerCancel != nil {
-		triggerCancel()
-	}
-}
-
-// TriggerBackupManual triggers a manual backup via HTTP
-func TriggerBackupManual(url string) error {
-	client := &http.Client{
-		Timeout: 10 * time.Second,
-	}
-
-	resp, err := client.Post(url, "application/json", nil)
-	if err != nil {
-		return fmt.Errorf("failed to trigger backup: %w", err)
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("trigger returned status code: %d", resp.StatusCode)
-	}
-
-	var result TriggerResponse
-	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
-		return fmt.Errorf("failed to decode response: %w", err)
-	}
-
-	log.Info().Msgf("Trigger response: %s - %s", result.Status, result.Message)
 	return nil
 }
