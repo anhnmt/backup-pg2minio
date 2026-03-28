@@ -1,13 +1,13 @@
 module github.com/anhnmt/backup-pg2minio
 
-go 1.25.0
+go 1.26
 
 require (
 	github.com/docker/go-units v0.5.0
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/ilyakaznacheev/cleanenv v1.5.0
 	github.com/robfig/cron/v3 v3.0.1
-	github.com/rs/zerolog v1.34.0
+	github.com/rs/zerolog v1.35.0
 )
 
 require (
