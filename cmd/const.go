@@ -6,7 +6,6 @@ const (
 	PgRestore = "pg_restore"
 	Gzip      = "gzip"
 	Gunzip    = "gunzip"
-	MC        = "mc"
 )
 
 const (

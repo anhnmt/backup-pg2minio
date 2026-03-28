@@ -110,15 +110,12 @@ func Execute() {
 		}
 	}
 
-	err = aliasSet(cfg.Minio)
-	if err != nil {
-		log.Panic().Err(err).Msg("Failed to set alias minio")
-	}
+	// Note: aliasSet and preRunMinio are no longer needed with MinIO SDK
+	// The MinIO client is created directly in storage() and restore functions
 
 	if cfg.Minio.Prerun {
-		if err = preRunMinio(cfg.Minio); err != nil {
-			log.Panic().Err(err).Msg("Failed to pre-run minio")
-		}
+		// MinIO bucket check is now done in storage() function
+		log.Info().Msg("MinIO prerun check skipped - will be validated during upload")
 	}
 
 	if cfg.Schedule.Cron == "" {

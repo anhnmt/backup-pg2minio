@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"context"
 	"fmt"
 	"os"
 	"os/exec"
@@ -61,26 +62,22 @@ func downloadFromMinio(cfg Minio, sourcePath, destDir string) (string, error) {
 	fileName := parts[len(parts)-1]
 	destPath := fmt.Sprintf("%s/%s", destDir, fileName)
 
-	args := []string{
-		"cp",
-		fmt.Sprintf("minio/%s", sourcePath),
-		destPath,
+	// Create MinIO client
+	mc, err := NewMinioClient(cfg)
+	if err != nil {
+		return "", fmt.Errorf("failed to create MinIO client: %w", err)
 	}
 
-	if cfg.Insecure {
-		args = append(args, "--insecure")
+	ctx := context.Background()
+
+	// Check bucket exists
+	if err := mc.BucketExists(ctx); err != nil {
+		return "", fmt.Errorf("bucket does not exist or inaccessible: %w", err)
 	}
 
-	if cfg.Debug {
-		args = append(args, "--debug")
-	}
-
-	log.Info().Msgf("Executing: %s %s", MC, strings.Join(args, " "))
-	mcCmd := exec.Command(MC, args...)
-	mcCmd.Stdout = os.Stdout
-	mcCmd.Stderr = os.Stderr
-
-	if err := mcCmd.Run(); err != nil {
+	// Download file
+	err = mc.DownloadFile(ctx, sourcePath, destPath)
+	if err != nil {
 		return "", fmt.Errorf("failed to download from Minio: %w", err)
 	}
 
