@@ -1,10 +1,12 @@
 package cmd
 
 const (
-	PSQL   = "psql"
-	PgDump = "pg_dump"
-	Gzip   = "gzip"
-	MC     = "mc"
+	PSQL      = "psql"
+	PgDump    = "pg_dump"
+	PgRestore = "pg_restore"
+	Gzip      = "gzip"
+	Gunzip    = "gunzip"
+	MC        = "mc"
 )
 
 const (

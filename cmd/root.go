@@ -32,6 +32,36 @@ func Execute() {
 		log.Panic().Err(err).Msg("Failed to init config")
 	}
 
+	// Determine action: backup or restore
+	switch cfg.Action {
+	case ActionRestore:
+		// Restore mode
+		if cfg.Restore.SourcePath == "" {
+			log.Panic().Msg("RESTORE_SOURCE_PATH is required for restore action")
+		}
+
+		restoreCfg := RestoreConfig{
+			Postgres:   cfg.Postgres,
+			Minio:      cfg.Minio,
+			SourcePath: cfg.Restore.SourcePath,
+			TargetDB:   cfg.Restore.TargetDB,
+		}
+
+		if err := PerformRestore(restoreCfg); err != nil {
+			log.Panic().Err(err).Msg("Restore failed")
+		}
+
+		log.Info().Msg("Restore completed successfully")
+		return
+
+	case ActionBackup:
+		// Backup mode - continue with normal flow
+		log.Info().Msg("Running in backup mode")
+
+	default:
+		log.Panic().Msgf("Invalid ACTION: %s. Must be 'backup' or 'restore'", cfg.Action)
+	}
+
 	if cfg.Metrics.Enable && cfg.Schedule.Cron == "" {
 		log.Panic().Msg("Metrics cannot be enabled without a cron schedule")
 	}
@@ -43,6 +73,12 @@ func Execute() {
 		WithContext(ctx).
 		WithFirstError().
 		WithCancelOnError()
+
+	if cfg.HTTPTrigger.Enable {
+		if err := StartTriggerServer(cfg, ctxPool); err != nil {
+			log.Panic().Err(err).Msg("Failed to start trigger server")
+		}
+	}
 
 	if cfg.Metrics.Enable {
 		mux := http.NewServeMux()

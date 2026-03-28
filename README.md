@@ -38,6 +38,8 @@ services:
 
 ### Optional Environment Variables
 
+- `ACTION` - Action to perform: `backup` (default) or `restore`.
+
 - `SCHEDULE` - Cron schedule to run periodic backups.
 
 - `POSTGRES_PASSWORD` - Password for the PostgreSQL user, if you are using a database on the same machine this isn't usually needed.
@@ -46,6 +48,7 @@ services:
 - `POSTGRES_DATABASE` - Name of the PostgreSQL database to backup.
 - `POSTGRES_USER` - PostgreSQL user, with priviledges to dump the database.
 - `POSTGRES_PRERUN` - Check connection before executing.
+- `POSTGRES_FORMAT` - Dump format: `custom` (default), `directory`, `plain`, `tar`. Use `custom` or `directory` for TimescaleDB.
 
 - `MINIO_API_VERSION` - you can change with `S3v4` or `S3v2`.
 - `MINIO_CLEAN` - Assign a value to activate, default is `0`. For example: `7d`, `14d`, `1m`, `30s`
@@ -63,6 +66,45 @@ services:
 - `METRICS_SUBSYSTEM` - Subsystem for the metrics. Default is empty.
 - `METRICS_PORT` - Port for the metrics endpoint. Default is `8080`.
 - `METRICS_PATH` - Path for the metrics endpoint. Default is `/metrics`.
+
+- `HTTP_TRIGGER_ENABLED` - Set `true` to enable HTTP trigger server for manual backup. Default is `false`.
+- `HTTP_TRIGGER_PORT` - Port for HTTP trigger server. Default is `8081`.
+- `HTTP_TRIGGER_PATH` - Path for trigger endpoint. Default is `/trigger`.
+
+## Restore Mode
+
+To restore a database, set `ACTION=restore` and configure:
+
+- `ACTION=restore` - Required
+- `RESTORE_SOURCE_PATH` - Path to backup file in Minio (e.g., `bucket/database/backup_2024-01-15.sql.gz`)
+- `RESTORE_TARGET_DB` - Target database name (optional, defaults to source database)
+
+Example:
+```bash
+ACTION=restore
+RESTORE_SOURCE_PATH=mybucket/mydb/mydb_2024-01-15T10:00:00Z.sql.gz
+RESTORE_TARGET_DB=restored_db
+```
+
+## HTTP Trigger
+
+To enable manual backup trigger via HTTP:
+
+```bash
+HTTP_TRIGGER_ENABLED=true
+HTTP_TRIGGER_PORT=8081
+HTTP_TRIGGER_PATH=/trigger
+```
+
+Trigger a backup:
+```bash
+curl -X POST http://localhost:8081/trigger
+```
+
+Check health:
+```bash
+curl http://localhost:8081/health
+```
 
 # some script from 
 -  alpine packages : https://pkgs.alpinelinux.org/packages

@@ -9,15 +9,40 @@ import (
 )
 
 type Config struct {
-	Schedule `json:"schedule"`
-	Postgres `json:"postgres"`
-	Minio    `json:"minio"`
-	Telegram `json:"telegram"`
-	Metrics  `json:"metrics"`
+	Action      Action `json:"action" env:"ACTION" env-default:"backup"`
+	Schedule    `json:"schedule"`
+	Postgres    `json:"postgres"`
+	Minio       `json:"minio"`
+	Telegram    `json:"telegram"`
+	Metrics     `json:"metrics"`
+	HTTPTrigger `json:"http_trigger"`
+	Restore     `json:"restore"`
 }
 
 type Schedule struct {
 	Cron string `env:"SCHEDULE"`
+}
+
+// Action defines the operation mode: backup or restore
+type Action string
+
+const (
+	ActionBackup  Action = "backup"
+	ActionRestore Action = "restore"
+)
+
+// HTTPTrigger config for manual backup trigger via HTTP
+type HTTPTrigger struct {
+	Enable bool   `env:"HTTP_TRIGGER_ENABLED" env-default:"false"`
+	Port   string `env:"HTTP_TRIGGER_PORT" env-default:"8081"`
+	Path   string `env:"HTTP_TRIGGER_PATH" env-default:"/trigger"`
+}
+
+// Restore config for restore functionality
+type Restore struct {
+	Enable     bool   `env:"RESTORE" env-default:"false"`
+	SourcePath string `env:"RESTORE_SOURCE_PATH"` // Path to backup file in Minio
+	TargetDB   string `env:"RESTORE_TARGET_DB"`   // Target database name (optional, uses source name)
 }
 
 type Postgres struct {
