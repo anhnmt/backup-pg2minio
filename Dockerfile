@@ -1,38 +1,56 @@
-ARG GO_VERSION=${GO_VERSION:-"1.26"}
-ARG ALPINE_VERSION=${ALPINE_VERSION:-"3.23"}
+ARG GO_VERSION=1.26
+ARG ALPINE_VERSION=3.23
+ARG PG_VERSION=18
 
-FROM postgres:18-alpine${ALPINE_VERSION} AS base
+# ── Stage 1: Download mc binary ───────────────────────────────────────────────
+FROM alpine:${ALPINE_VERSION} AS mc-downloader
 
-RUN apk add --update --no-cache \
-			ca-certificates \
-			curl \
-		&& curl -Lo /usr/bin/mc https://dl.min.io/client/mc/release/linux-amd64/mc \
-		&& chmod +x /usr/bin/mc \
-    && rm -rf /var/log/* \
-    && rm -rf /var/cache/apk/*
+RUN apk add --no-cache curl \
+    && curl -Lo /usr/bin/mc https://dl.min.io/client/mc/release/linux-amd64/mc \
+    && chmod +x /usr/bin/mc
 
+# ── Stage 2: Build Go binary ──────────────────────────────────────────────────
 FROM golang:${GO_VERSION}-alpine${ALPINE_VERSION} AS builder
+
 WORKDIR /app
 
-# Copy go mod and sum files
 COPY go.mod go.sum ./
-
-# Download all dependencies. Dependencies will be cached if the go.mod and go.sum files are not changed
 RUN go mod download
 
 COPY . .
 
-# Build the Go app
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o pg2minio ./main.go
+RUN CGO_ENABLED=0 GOOS=linux go build \
+    -a \
+    -installsuffix cgo \
+    -ldflags="-s -w -extldflags '-static'" \
+    -trimpath \
+    -o pg2minio \
+    ./main.go
 
-FROM base
+# ── Stage 3: Compress binary ──────────────────────────────────────────────────
+FROM alpine:${ALPINE_VERSION} AS compressor
+
+RUN apk add --no-cache upx
+
+COPY --from=builder /app/pg2minio /pg2minio
+
+RUN upx --best --lzma /pg2minio \
+    && upx --test /pg2minio
+
+# ── Stage 4: Final ────────────────────────────────────────────────────────────
+FROM alpine:${ALPINE_VERSION}
+
+ARG PG_VERSION
+
+# Only install pg_dump client, not the full PostgreSQL server
+RUN apk add --no-cache \
+        ca-certificates \
+        postgresql${PG_VERSION}-client \
+    && rm -rf /var/cache/apk/*
+
+COPY --from=mc-downloader /usr/bin/mc /usr/bin/mc
+COPY --from=compressor /pg2minio /usr/local/bin/pg2minio
 
 WORKDIR /app
-
-COPY --from=builder /app/pg2minio /usr/local/bin/pg2minio
-RUN chmod +x /usr/local/bin/pg2minio
-
-RUN chmod 0777 /app
-RUN chmod 0777 /usr/local/bin
 
 CMD ["/usr/local/bin/pg2minio"]
