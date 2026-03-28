@@ -19,9 +19,14 @@ func pgDump(cfg Postgres) error {
 		cfg.Database,
 	)
 
+	format := getDumpFormat(cfg.Format)
+	fileName := getDumpFileName(cfg.Format)
+
 	args := []string{
 		"-d",
 		conn,
+		"-f",
+		format,
 	}
 
 	pgOpts := cfg.ExtraOpts
@@ -32,7 +37,39 @@ func pgDump(cfg Postgres) error {
 		args = append(args, strings.Split(pgOpts, " ")...)
 	}
 
-	return executePgDump(args...)
+	return executePgDump(args, fileName, cfg.Format)
+}
+
+// getDumpFormat returns the pg_dump format flag based on the format string
+func getDumpFormat(format string) string {
+	switch strings.ToLower(format) {
+	case "custom":
+		return "Fc"
+	case "directory":
+		return "Fd"
+	case "plain", "sql":
+		return "Fp"
+	case "tar":
+		return "Ft"
+	default:
+		return "Fc"
+	}
+}
+
+// getDumpFileName returns the appropriate filename based on dump format
+func getDumpFileName(format string) string {
+	switch strings.ToLower(format) {
+	case "custom":
+		return PgDumpFileCustom
+	case "directory":
+		return PgDumpFileDirectory
+	case "plain", "sql":
+		return PgDumpFilePlain
+	case "tar":
+		return "pg_dump.tar.gz"
+	default:
+		return PgDumpFileCustom
+	}
 }
 
 func preRunPostgres(cfg Postgres) error {
@@ -57,10 +94,15 @@ func preRunPostgres(cfg Postgres) error {
 	return psqlCmd.Run()
 }
 
-func executePgDump(args ...string) error {
+func executePgDump(args []string, fileName string, format string) error {
 	log.Info().Msgf("Executing: %s %s", PgDump, replacePostgresql(strings.Join(args, " ")))
 	pgDumpCmd := exec.Command(PgDump, args...)
 	pgDumpCmd.Stderr = os.Stderr
+
+	// Handle directory format differently - it creates a directory instead of stdout
+	if strings.ToLower(format) == "directory" {
+		return executePgDumpDirectory(pgDumpCmd, fileName)
+	}
 
 	// Create a pipe to connect the stdout of pg_dump to the stdin of gzip
 	pipe, err := pgDumpCmd.StdoutPipe()
@@ -82,7 +124,7 @@ func executePgDump(args ...string) error {
 	gzipCmd.Stderr = os.Stderr
 
 	// Create a file to save the output of gzip
-	outputFile, err := createFile(PgDumpFile)
+	outputFile, err := createFile(fileName)
 	if err != nil {
 		return err
 	}
@@ -104,6 +146,66 @@ func executePgDump(args ...string) error {
 
 	if err = gzipCmd.Wait(); err != nil {
 		log.Err(err).Msgf("Error waiting for %s command", Gzip)
+		return err
+	}
+
+	return nil
+}
+
+// executePgDumpDirectory handles the directory format which creates a directory
+func executePgDumpDirectory(cmd *exec.Cmd, dirName string) error {
+	// Create the output directory
+	if err := os.MkdirAll(dirName, 0755); err != nil {
+		log.Err(err).Msgf("Error creating directory %s", dirName)
+		return err
+	}
+
+	// Set the output directory for pg_dump
+	cmd.Dir = dirName
+
+	// Start pg_dump command
+	if err := cmd.Start(); err != nil {
+		log.Err(err).Msgf("Error start %s command", PgDump)
+		return err
+	}
+
+	// Wait for pg_dump to finish
+	if err := cmd.Wait(); err != nil {
+		log.Err(err).Msgf("Error waiting for %s command", PgDump)
+		return err
+	}
+
+	// Compress the directory with tar and gzip
+	if err := compressDirectory(dirName); err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// compressDirectory creates a tar.gz archive from a directory
+func compressDirectory(dirName string) error {
+	// Create the tar.gz file
+	outputFile, err := createFile(dirName + ".tar.gz")
+	if err != nil {
+		return err
+	}
+	defer outputFile.Close()
+
+	// Create tar command
+	tarCmd := exec.Command("tar", "-czf", "-", ".")
+	tarCmd.Dir = dirName
+	tarCmd.Stdout = outputFile
+	tarCmd.Stderr = os.Stderr
+
+	if err := tarCmd.Run(); err != nil {
+		log.Err(err).Msg("Error creating tar archive")
+		return err
+	}
+
+	// Remove the original directory after compression
+	if err := os.RemoveAll(dirName); err != nil {
+		log.Err(err).Msgf("Error removing directory %s", dirName)
 		return err
 	}
 

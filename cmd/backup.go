@@ -54,13 +54,16 @@ func Cron(cfg Config) {
 }
 
 func start(cfg Config, now time.Time) (err error) {
+	// Get the dump filename based on format
+	dumpFileName := getDumpFileName(cfg.Postgres.Format)
+
 	defer func() {
-		info, err2 := os.Stat(PgDumpFile)
+		info, err2 := os.Stat(dumpFileName)
 		if os.IsNotExist(err2) {
 			return
 		}
 
-		if err2 = removeFile(PgDumpFile); err2 != nil {
+		if err2 = removeFile(dumpFileName); err2 != nil {
 			Err(err, "Failed to remove pg_dump file")
 		}
 
@@ -86,7 +89,7 @@ func start(cfg Config, now time.Time) (err error) {
 		return err
 	}
 
-	err = storage(cfg.Minio, cfg.Postgres.Database)
+	err = storage(cfg.Minio, cfg.Postgres.Database, cfg.Postgres.Format)
 	if err != nil {
 		return err
 	}

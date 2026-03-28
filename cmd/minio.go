@@ -10,7 +10,7 @@ import (
 	"github.com/rs/zerolog/log"
 )
 
-func storage(cfg Minio, dbName string) error {
+func storage(cfg Minio, dbName string, format string) error {
 	bucket := fmt.Sprintf("%s/%s", Alias, cfg.Bucket)
 	backupDir := fmt.Sprintf("%s/%s", bucket, dbName)
 
@@ -18,7 +18,7 @@ func storage(cfg Minio, dbName string) error {
 		backupDir = fmt.Sprintf("%s/%s/%s", bucket, cfg.BackupDir, dbName)
 	}
 
-	err := mcCopy(cfg, backupDir, dbName)
+	err := mcCopy(cfg, backupDir, dbName, format)
 	if err != nil {
 		log.Err(err).Msg("Failed to copy")
 		return err
@@ -86,13 +86,13 @@ func preRunMinio(cfg Minio) error {
 	return mcCmd.Run()
 }
 
-func mcCopy(cfg Minio, backupDir string, dbName string) error {
+func mcCopy(cfg Minio, backupDir string, dbName string, format string) error {
 	now := time.Now().Format(time.RFC3339)
-	fileName := fmt.Sprintf("%s_%s.sql.gz", dbName, now)
+	fileName := getUploadFileName(dbName, now, format)
 
 	args := []string{
 		"cp",
-		fmt.Sprintf("./%s", PgDumpFile),
+		fmt.Sprintf("./%s", getDumpFileName(format)),
 	}
 
 	if cfg.Insecure {
@@ -111,6 +111,22 @@ func mcCopy(cfg Minio, backupDir string, dbName string) error {
 	mcCmd.Stderr = os.Stderr
 
 	return mcCmd.Run()
+}
+
+// getUploadFileName returns the appropriate upload filename based on dump format
+func getUploadFileName(dbName string, timestamp string, format string) string {
+	switch strings.ToLower(format) {
+	case "custom":
+		return fmt.Sprintf("%s_%s.custom.gz", dbName, timestamp)
+	case "directory":
+		return fmt.Sprintf("%s_%s.backup.tar.gz", dbName, timestamp)
+	case "plain", "sql":
+		return fmt.Sprintf("%s_%s.sql.gz", dbName, timestamp)
+	case "tar":
+		return fmt.Sprintf("%s_%s.tar.gz", dbName, timestamp)
+	default:
+		return fmt.Sprintf("%s_%s.custom.gz", dbName, timestamp)
+	}
 }
 
 func mcClean(cfg Minio, backupDir, clean string) error {

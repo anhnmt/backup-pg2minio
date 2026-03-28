@@ -27,6 +27,7 @@ type Postgres struct {
 	User      string `env:"POSTGRES_USER" env-default:"postgres"`
 	Password  string `env:"POSTGRES_PASSWORD"`
 	Database  string `env:"POSTGRES_DATABASE"`
+	Format    string `env:"POSTGRES_FORMAT" env-default:"custom"` // custom, directory, plain
 	ExtraOpts string `env:"POSTGRES_EXTRA_OPTS"`
 }
 
