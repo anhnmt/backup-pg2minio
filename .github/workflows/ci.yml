@@ -49,8 +49,10 @@ jobs:
           timeout 60 bash -c 'until docker exec test_postgres pg_isready -U postgres; do sleep 1; done' || echo "PostgreSQL ready"
           timeout 60 bash -c 'until curl -s http://localhost:9000/minio/health/live; do sleep 1; done' || echo "MinIO ready"
 
-      - name: Create MinIO bucket
-        run: docker exec test_minio mc mb local/testbucket
+      - name: Configure MinIO
+        run: |
+          docker exec test_minio mc alias set local http://localhost:9000 12345678 12345678
+          docker exec test_minio mc mb local/testbucket
 
       - name: Build
         run: go build -o backup-pg2minio .
