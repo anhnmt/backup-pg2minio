@@ -105,19 +105,26 @@ func restorePlain(cfg Postgres, filePath, targetDB string) error {
 	if strings.HasSuffix(filePath, ".gz") {
 		decompressedFile := strings.TrimSuffix(filePath, ".gz")
 
-		gzipCmd := exec.Command(Gunzip, "-c", filePath)
 		outputFile, err := os.Create(decompressedFile)
 		if err != nil {
 			return fmt.Errorf("failed to create decompressed file: %w", err)
 		}
 		defer os.Remove(decompressedFile)
 
+		gzipCmd := exec.Command(Gunzip, "-c", filePath)
 		gzipCmd.Stdout = outputFile
 		gzipCmd.Stderr = os.Stderr
 
 		if err := gzipCmd.Run(); err != nil {
+			outputFile.Close()
 			return fmt.Errorf("failed to decompress: %w", err)
 		}
+
+		// Must close before psql reads the file
+		if err := outputFile.Close(); err != nil {
+			return fmt.Errorf("failed to close decompressed file: %w", err)
+		}
+
 		filePath = decompressedFile
 	}
 
@@ -154,18 +161,25 @@ func restoreBinary(cfg Postgres, filePath, format, targetDB string) error {
 	if strings.HasSuffix(filePath, ".gz") {
 		decompressedFile := strings.TrimSuffix(filePath, ".gz")
 
-		gzipCmd := exec.Command(Gunzip, "-c", filePath)
 		outputFile, err := os.Create(decompressedFile)
 		if err != nil {
 			return fmt.Errorf("failed to create decompressed file: %w", err)
 		}
 
+		gzipCmd := exec.Command(Gunzip, "-c", filePath)
 		gzipCmd.Stdout = outputFile
 		gzipCmd.Stderr = os.Stderr
 
 		if err := gzipCmd.Run(); err != nil {
+			outputFile.Close()
 			return fmt.Errorf("failed to decompress: %w", err)
 		}
+
+		// Must close before pg_restore reads the file
+		if err := outputFile.Close(); err != nil {
+			return fmt.Errorf("failed to close decompressed file: %w", err)
+		}
+
 		filePath = decompressedFile
 		defer os.Remove(filePath)
 	}
