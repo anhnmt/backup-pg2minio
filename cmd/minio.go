@@ -25,17 +25,21 @@ func storage(cfg Minio, dbName string, format string) error {
 		return err
 	}
 
-	backupDir := cfg.Bucket
-	if cfg.BackupDir != "" {
-		backupDir = fmt.Sprintf("%s/%s", backupDir, cfg.BackupDir)
-	}
+	// backupDir là subfolder bên trong bucket, KHÔNG phải bucket name
+	// cfg.Bucket đã được dùng trong UploadFile/DownloadFile rồi
+	backupDir := cfg.BackupDir
 
 	// Create upload filename with timestamp
 	now := time.Now().Format(time.RFC3339)
 	uploadFileName := getUploadFileName(dbName, now, format)
 
-	// Upload file
-	objectName := fmt.Sprintf("%s/%s", backupDir, uploadFileName)
+	// Build object key: "subfolder/filename" hoặc chỉ "filename" nếu không có BackupDir
+	var objectName string
+	if backupDir != "" {
+		objectName = fmt.Sprintf("%s/%s", backupDir, uploadFileName)
+	} else {
+		objectName = uploadFileName
+	}
 	fileName := getDumpFileName(format)
 
 	err = mc.UploadFile(ctx, fileName, objectName)
@@ -46,10 +50,8 @@ func storage(cfg Minio, dbName string, format string) error {
 
 	// Clean old backups if configured
 	if cfg.Clean != "" {
+		// prefix dùng backupDir (subfolder), không prepend bucket name
 		prefix := backupDir
-		if cfg.BackupDir != "" {
-			prefix = fmt.Sprintf("%s/%s", cfg.Bucket, cfg.BackupDir)
-		}
 
 		oldObjects, err := mc.GetObjectsOlderThan(ctx, prefix, cfg.Clean)
 		if err != nil {
