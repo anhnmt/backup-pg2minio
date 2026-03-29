@@ -42,7 +42,9 @@ jobs:
           go-version: '1.26'
 
       - name: Build test images
-        run: docker compose -f docker-compose.test.yml build
+        run: |
+          docker build -t backup-pg2minio:latest .
+          docker tag backup-pg2minio:latest anhnmt/backup-pg2minio:latest
 
       - name: Start services
         run: docker compose -f docker-compose.test.yml up -d postgres minio
