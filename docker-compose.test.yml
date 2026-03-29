@@ -37,7 +37,6 @@ services:
   pg2minio:
     image: anhnmt/backup-pg2minio:latest
     container_name: test_pg2minio
-    network_mode: host
     depends_on:
       postgres:
         condition: service_healthy
@@ -49,22 +48,21 @@ services:
       MINIO_ACCESS_KEY: 12345678
       MINIO_SECRET_KEY: 12345678
       MINIO_BUCKET: testbucket
-      MINIO_SERVER: http://127.0.0.1:9000
+      MINIO_SERVER: http://minio:9000
       MINIO_API_VERSION: S3v4
       POSTGRES_DATABASE: exampledb
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
-      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
-      POSTGRES_FORMAT: directory
-      POSTGRES_EXTRA_OPTS: "--jobs=2"
+      POSTGRES_FORMAT: custom
+      POSTGRES_EXTRA_OPTS: ""
 
   restore_test:
     build:
       context: .
       dockerfile: ./Dockerfile
     container_name: test_restore
-    network_mode: host
     depends_on:
       postgres:
         condition: service_healthy
@@ -75,14 +73,14 @@ services:
       MINIO_ACCESS_KEY: 12345678
       MINIO_SECRET_KEY: 12345678
       MINIO_BUCKET: testbucket
-      MINIO_SERVER: http://127.0.0.1:9000
+      MINIO_SERVER: http://minio:9000
       MINIO_API_VERSION: S3v4
       POSTGRES_DATABASE: exampledb
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: example
-      POSTGRES_HOST: 127.0.0.1
+      POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
-      RESTORE_SOURCE_PATH: exampledb_2026-03-29T12-00-00.custom.gz
+      RESTORE_SOURCE_PATH: ""
       RESTORE_TARGET_DB: exampledb_restore
 
 volumes:

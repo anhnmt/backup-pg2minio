@@ -11,20 +11,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.26'
+          go-version: '1.24'
 
       - name: Run go vet
         run: go vet ./...
 
-
       - name: Build
         run: go build -v ./...
-
 
       - name: Test
         run: go test -v ./...
@@ -34,14 +32,14 @@ jobs:
     needs: lint
     steps:
       - name: Checkout
-        uses: actions/checkout@v5
+        uses: actions/checkout@v4
 
       - name: Set up Go
-        uses: actions/setup-go@v6
+        uses: actions/setup-go@v5
         with:
-          go-version: '1.26'
+          go-version: '1.24'
 
-      - name: Build test images
+      - name: Build docker image
         run: |
           docker build -t backup-pg2minio:latest .
           docker tag backup-pg2minio:latest anhnmt/backup-pg2minio:latest
@@ -49,43 +47,65 @@ jobs:
       - name: Start services
         run: docker compose -f docker-compose.test.yml up -d postgres minio
 
-      - name: Wait for services
+      - name: Wait for PostgreSQL
         run: |
-          timeout 60 bash -c 'until docker exec test_postgres pg_isready -U postgres; do sleep 1; done' || echo "PostgreSQL ready"
-          timeout 60 bash -c 'until curl -s http://localhost:9000/minio/health/live; do sleep 1; done' || echo "MinIO ready"
+          timeout 60 bash -c 'until docker exec test_postgres pg_isready -U postgres; do sleep 1; done'
+          echo "PostgreSQL ready"
 
-      - name: Configure MinIO
+      - name: Wait for MinIO
+        run: |
+          timeout 60 bash -c 'until curl -sf http://localhost:9000/minio/health/live; do sleep 1; done'
+          echo "MinIO ready"
+
+      - name: Configure MinIO bucket
         run: |
           docker exec test_minio mc alias set local http://localhost:9000 12345678 12345678
-          docker exec test_minio mc mb local/testbucket
+          docker exec test_minio mc mb --ignore-existing local/testbucket
 
-      - name: Build
+      - name: Build binary
         run: go build -o backup-pg2minio .
-
 
       - name: Run backup
         run: |
-          docker compose -f docker-compose.test.yml run --build --rm pg2minio
+          docker compose -f docker-compose.test.yml run --rm pg2minio
+          echo "Backup exit code: $?"
 
       - name: Verify backup in MinIO
         run: |
-          # List files
-          docker exec test_minio mc ls local/testbucket/
-          # Check file size > 0
-          FILE_SIZE=$(docker exec test_minio mc stat -f local/testbucket/ custom.gz 2>/dev/null | grep "Size" | awk '{print $2}')
-          echo "File size: $FILE_SIZE"
-          if [ -z "$FILE_SIZE" ] || [ "$FILE_SIZE" = "0" ]; then
-            echo "ERROR: Backup file is empty or not found"
+          echo "=== Files in bucket ==="
+          docker exec test_minio mc ls --recursive local/testbucket/
+
+          # mc ls output: [date] [time] [size] [path]  — $NF là full path kể cả prefix
+          FILE=$(docker exec test_minio mc ls --recursive local/testbucket/ | grep "custom.gz" | head -1 | awk '{print $NF}')
+          if [ -z "$FILE" ]; then
+            echo "ERROR: No backup file found in bucket"
             exit 1
           fi
-          echo "Backup file size valid: $FILE_SIZE bytes"
+          echo "Found backup file: $FILE"
+
+          # mc stat trả về "Size: 12345 B" — lấy cột số
+          FILE_SIZE=$(docker exec test_minio mc stat local/testbucket/$FILE | grep -i "^Size" | awk '{print $2}')
+          echo "File size: $FILE_SIZE bytes"
+          if [ -z "$FILE_SIZE" ] || [ "$FILE_SIZE" = "0" ]; then
+            echo "ERROR: Backup file is empty"
+            exit 1
+          fi
+          echo "Backup verified: $FILE ($FILE_SIZE bytes)"
+          echo "BACKUP_FILE=$FILE" >> $GITHUB_ENV
 
       - name: Run restore
         run: |
-          # Get backup file path
-          BACKUP_FILE=$(docker exec test_minio mc ls local/testbucket/ | grep "custom.gz" | head -1 | awk '{print $2}')
           echo "Restoring from: $BACKUP_FILE"
-          docker compose -f docker-compose.test.yml run --build -e RESTORE_SOURCE_PATH=$BACKUP_FILE restore_test
+          docker compose -f docker-compose.test.yml run --rm \
+            -e RESTORE_SOURCE_PATH="$BACKUP_FILE" \
+            restore_test
 
       - name: Verify restore
-        run: docker logs test_restore 2>&1 | grep "restore completed successfully" || echo "Check logs manually"
+        run: |
+          docker logs test_restore 2>&1 | grep -i "restore completed successfully" \
+            && echo "Restore verified successfully" \
+            || { echo "WARNING: success message not found in logs"; docker logs test_restore 2>&1; }
+
+      - name: Cleanup
+        if: always()
+        run: docker compose -f docker-compose.test.yml down -v
