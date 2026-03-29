@@ -10,6 +10,11 @@ import (
 )
 
 func pgDump(cfg Postgres) error {
+	// Validate: --jobs option only works with directory format
+	if strings.Contains(cfg.ExtraOpts, "--jobs") && strings.ToLower(cfg.Format) != "directory" {
+		return fmt.Errorf("--jobs option requires POSTGRES_FORMAT=directory, got %s", cfg.Format)
+	}
+
 	conn := fmt.Sprintf(
 		"postgresql://%s:%s@%s:%d/%s",
 		cfg.User,

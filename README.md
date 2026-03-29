@@ -45,6 +45,7 @@ services:
 - `POSTGRES_PASSWORD` - Password for the PostgreSQL user, if you are using a database on the same machine this isn't usually needed.
 - `POSTGRES_PORT` - Port of the PostgreSQL database, uses the default `5432`.
 - `POSTGRES_EXTRA_OPTS` - Extra arguments to pass to the `pg_dump` command.
+  - **Note:** `--jobs` option only works with `POSTGRES_FORMAT=directory`. Using `--jobs` with other formats will cause an error.
 - `POSTGRES_DATABASE` - Name of the PostgreSQL database to backup.
 - `POSTGRES_USER` - PostgreSQL user, with priviledges to dump the database.
 - `POSTGRES_PRERUN` - Check connection before executing.
