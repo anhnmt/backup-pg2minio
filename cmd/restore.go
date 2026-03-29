@@ -62,6 +62,12 @@ func downloadFromMinio(cfg Minio, sourcePath, destDir string) (string, error) {
 	fileName := parts[len(parts)-1]
 	destPath := fmt.Sprintf("%s/%s", destDir, fileName)
 
+	// Strip bucket name prefix if present (e.g. "testbucket/file.gz" -> "file.gz")
+	objectKey := sourcePath
+	if strings.HasPrefix(objectKey, cfg.Bucket+"/") {
+		objectKey = strings.TrimPrefix(objectKey, cfg.Bucket+"/")
+	}
+
 	// Create MinIO client
 	mc, err := NewMinioClient(cfg)
 	if err != nil {
@@ -75,8 +81,8 @@ func downloadFromMinio(cfg Minio, sourcePath, destDir string) (string, error) {
 		return "", fmt.Errorf("bucket does not exist or inaccessible: %w", err)
 	}
 
-	// Download file
-	err = mc.DownloadFile(ctx, sourcePath, destPath)
+	// Download file using clean object key (without bucket prefix)
+	err = mc.DownloadFile(ctx, objectKey, destPath)
 	if err != nil {
 		return "", fmt.Errorf("failed to download from Minio: %w", err)
 	}
@@ -164,12 +170,14 @@ func restoreBinary(cfg Postgres, filePath, format, targetDB string) error {
 		defer os.Remove(filePath)
 	}
 
-	// Determine pg_restore format flag
+	// Determine pg_restore format flag (-F, not -f)
 	restoreFormat := getRestoreFormat(format)
 
+	// pg_restore: -F for format, -d for database, file path is positional arg
+	// NOTE: -f means output FILE (conflicts with -d), -F means FORMAT
 	args := []string{
+		"-F", restoreFormat,
 		"-d", conn,
-		"-f", restoreFormat,
 		filePath,
 	}
 
@@ -191,17 +199,17 @@ func restoreBinary(cfg Postgres, filePath, format, targetDB string) error {
 	return nil
 }
 
-// getRestoreFormat returns the pg_restore format flag based on format
+// getRestoreFormat returns the pg_restore -F flag value based on format
 func getRestoreFormat(format string) string {
 	switch strings.ToLower(format) {
 	case "custom":
-		return "Fc"
+		return "c"
 	case "directory":
-		return "Fd"
+		return "d"
 	case "tar":
-		return "Ft"
+		return "t"
 	default:
-		return "Fc"
+		return "c"
 	}
 }
 
