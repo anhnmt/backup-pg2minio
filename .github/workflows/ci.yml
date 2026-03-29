@@ -66,36 +66,40 @@ jobs:
         run: go build -o backup-pg2minio .
 
       - name: Run backup
-        run: |
-          docker compose -f docker-compose.test.yml run --rm pg2minio
-          echo "Backup exit code: $?"
+        run: docker compose -f docker-compose.test.yml run --rm pg2minio
 
       - name: Verify backup in MinIO
         run: |
-          echo "=== Files in bucket ==="
+          echo "=== Raw mc ls output ==="
           docker exec test_minio mc ls --recursive local/testbucket/
 
-          # mc ls output: [date] [time] [size] [path]  — $NF là full path kể cả prefix
-          FILE=$(docker exec test_minio mc ls --recursive local/testbucket/ | grep "custom.gz" | head -1 | awk '{print $NF}')
-          if [ -z "$FILE" ]; then
+          # $NF từ mc ls --recursive là object key kể cả subfolder, không có bucket name
+          # Ví dụ: "exampledb/exampledb_2026-03-29T12-00-00.custom.gz"
+          # hoặc flat: "exampledb_2026-03-29T12-00-00.custom.gz"
+          OBJECT_KEY=$(docker exec test_minio mc ls --recursive local/testbucket/ \
+            | grep "custom.gz" | head -1 | awk '{print $NF}')
+
+          if [ -z "$OBJECT_KEY" ]; then
             echo "ERROR: No backup file found in bucket"
             exit 1
           fi
-          echo "Found backup file: $FILE"
+          echo "Object key in MinIO: $OBJECT_KEY"
 
-          # mc stat trả về "Size: 12345 B" — lấy cột số
-          FILE_SIZE=$(docker exec test_minio mc stat local/testbucket/$FILE | grep -i "^Size" | awk '{print $2}')
+          FILE_SIZE=$(docker exec test_minio mc stat "local/testbucket/$OBJECT_KEY" \
+            | grep -i "Size" | awk '{print $2}')
           echo "File size: $FILE_SIZE bytes"
           if [ -z "$FILE_SIZE" ] || [ "$FILE_SIZE" = "0" ]; then
             echo "ERROR: Backup file is empty"
             exit 1
           fi
-          echo "Backup verified: $FILE ($FILE_SIZE bytes)"
-          echo "BACKUP_FILE=$FILE" >> $GITHUB_ENV
+
+          echo "Backup verified: $OBJECT_KEY ($FILE_SIZE bytes)"
+          # Truyền đúng object key vào restore (không có bucket prefix)
+          echo "BACKUP_FILE=$OBJECT_KEY" >> $GITHUB_ENV
 
       - name: Run restore
         run: |
-          echo "Restoring from: $BACKUP_FILE"
+          echo "Restoring from object key: $BACKUP_FILE"
           docker compose -f docker-compose.test.yml run --rm \
             -e RESTORE_SOURCE_PATH="$BACKUP_FILE" \
             restore_test
