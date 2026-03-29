@@ -35,7 +35,9 @@ services:
       retries: 5
 
   pg2minio:
-    image: anhnmt/backup-pg2minio:latest
+    build:
+      context: .
+      dockerfile: ./Dockerfile
     container_name: test_pg2minio
     network_mode: host
     depends_on:
@@ -56,11 +58,13 @@ services:
       POSTGRES_PASSWORD: example
       POSTGRES_HOST: 127.0.0.1
       POSTGRES_PORT: 5432
-      POSTGRES_FORMAT: custom
+      POSTGRES_FORMAT: directory
       POSTGRES_EXTRA_OPTS: "--jobs=2"
 
   restore_test:
-    image: anhnmt/backup-pg2minio:latest
+    build:
+      context: .
+      dockerfile: ./Dockerfile
     container_name: test_restore
     network_mode: host
     depends_on:

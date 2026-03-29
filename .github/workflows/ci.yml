@@ -41,7 +41,10 @@ jobs:
         with:
           go-version: '1.26'
 
-      - name: Set up Docker Compose
+      - name: Build test images
+        run: docker compose -f docker-compose.test.yml build
+
+      - name: Start services
         run: docker compose -f docker-compose.test.yml up -d postgres minio
 
       - name: Wait for services
