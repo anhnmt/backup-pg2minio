@@ -32,9 +32,7 @@ func pgDump(cfg Postgres) error {
 	pgOpts := cfg.ExtraOpts
 	if pgOpts != "" {
 		pgOpts = strings.TrimSpace(pgOpts)
-		pgOpts = strings.ReplaceAll(pgOpts, "=", " ")
-
-		args = append(args, strings.Split(pgOpts, " ")...)
+		args = append(args, strings.Fields(pgOpts)...)
 	}
 
 	return executePgDump(args, fileName, cfg.Format)
@@ -66,7 +64,7 @@ func getDumpFileName(format string) string {
 	case "plain", "sql":
 		return PgDumpFilePlain
 	case "tar":
-		return "pg_dump.tar.gz"
+		return PgDumpFileTar
 	default:
 		return PgDumpFileCustom
 	}

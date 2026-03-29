@@ -176,8 +176,7 @@ func restoreBinary(cfg Postgres, filePath, format, targetDB string) error {
 	pgOpts := cfg.ExtraOpts
 	if pgOpts != "" {
 		pgOpts = strings.TrimSpace(pgOpts)
-		pgOpts = strings.ReplaceAll(pgOpts, "=", " ")
-		args = append(args, strings.Split(pgOpts, " ")...)
+		args = append(args, strings.Fields(pgOpts)...)
 	}
 
 	log.Info().Msgf("Executing: %s %s", PgRestore, replacePostgresql(strings.Join(args, " ")))

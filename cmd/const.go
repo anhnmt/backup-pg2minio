@@ -9,11 +9,12 @@ const (
 )
 
 const (
-	Alias = "minio"
 	// PgDumpFileCustom is the output file for custom format
 	PgDumpFileCustom = "pg_dump.custom.gz"
 	// PgDumpFileDirectory is the output directory for directory format
 	PgDumpFileDirectory = "pg_dump.backup"
 	// PgDumpFilePlain is the output file for plain format
 	PgDumpFilePlain = "pg_dump.sql.gz"
+	// PgDumpFileTar is the output file for tar format
+	PgDumpFileTar = "pg_dump.tar.gz"
 )
