@@ -9,8 +9,7 @@ const (
 )
 
 const (
-	Alias      = "minio"
-	PgDumpFile = "pg_dump.sql.gz"
+	Alias = "minio"
 	// PgDumpFileCustom is the output file for custom format
 	PgDumpFileCustom = "pg_dump.custom.gz"
 	// PgDumpFileDirectory is the output directory for directory format
