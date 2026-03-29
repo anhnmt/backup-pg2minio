@@ -63,7 +63,7 @@ jobs:
 
       - name: Run backup
         run: |
-          docker compose -f docker-compose.test.yml run --rm pg2minio
+          docker compose -f docker-compose.test.yml run --build --rm pg2minio
 
       - name: Verify backup in MinIO
         run: |
@@ -83,7 +83,7 @@ jobs:
           # Get backup file path
           BACKUP_FILE=$(docker exec test_minio mc ls local/testbucket/ | grep "custom.gz" | head -1 | awk '{print $2}')
           echo "Restoring from: $BACKUP_FILE"
-          docker compose -f docker-compose.test.yml run -e RESTORE_SOURCE_PATH=$BACKUP_FILE restore_test
+          docker compose -f docker-compose.test.yml run --build -e RESTORE_SOURCE_PATH=$BACKUP_FILE restore_test
 
       - name: Verify restore
         run: docker logs test_restore 2>&1 | grep "restore completed successfully" || echo "Check logs manually"
