@@ -1,4 +1,4 @@
-ARG GO_VERSION=1.26
+ARG GO_VERSION=1.26.5
 ARG ALPINE_VERSION=3.23
 ARG PG_VERSION=18
 
@@ -20,28 +20,19 @@ RUN CGO_ENABLED=0 GOOS=linux go build \
     -o pg2minio \
     ./main.go
 
-# ── Stage 2: Compress binary ──────────────────────────────────────────────────
-FROM alpine:${ALPINE_VERSION} AS compressor
-
-RUN apk add --no-cache upx
-
-COPY --from=builder /app/pg2minio /pg2minio
-
-RUN upx --best --lzma /pg2minio \
-    && upx --test /pg2minio
-
-# ── Stage 3: Final ────────────────────────────────────────────────────────────
+# ── Stage 2: Final ─────────────────────────────────────────────────────────────
 FROM alpine:${ALPINE_VERSION}
 
 ARG PG_VERSION
 
 # Only install pg_dump client, not the full PostgreSQL server
-RUN apk add --no-cache \
+RUN apk upgrade --no-cache \
+    && apk add --no-cache \
         ca-certificates \
         postgresql${PG_VERSION}-client \
     && rm -rf /var/cache/apk/*
 
-COPY --from=compressor /pg2minio /usr/local/bin/pg2minio
+COPY --from=builder /app/pg2minio /usr/local/bin/pg2minio
 
 WORKDIR /app
 

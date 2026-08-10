@@ -5,3 +5,4 @@ docker-compose-*.yml
 dist/
 .envrc
 backup-pg2minio
+.kilo/

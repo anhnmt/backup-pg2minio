@@ -6,3 +6,5 @@ Dockerfile
 docker-compose.yml
 docker-compose-*.yml
 *.gz
+*.tar
+reports/
